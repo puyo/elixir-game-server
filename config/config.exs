@@ -6,11 +6,11 @@
 use Mix.Config
 
 # Configures the endpoint
-config :testelm, Testelm.Endpoint,
+config :gameserver, GameServer.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "CjEXpDSuArCs4eXKA2f6xEpdkkmcGuCSD6e8KvS/onlUi/y2YAY6y+S33IZb0008",
-  render_errors: [view: Testelm.ErrorView, accepts: ~w(html json)],
-  pubsub: [name: Testelm.PubSub,
+  render_errors: [view: GameServer.ErrorView, accepts: ~w(html json)],
+  pubsub: [name: GameServer.PubSub,
            adapter: Phoenix.PubSub.PG2]
 
 # Configures Elixir's Logger

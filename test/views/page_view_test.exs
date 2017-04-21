@@ -1,3 +1,3 @@
-defmodule Testelm.PageViewTest do
-  use Testelm.ConnCase, async: true
+defmodule GameServer.PageViewTest do
+  use GameServer.ConnCase, async: true
 end

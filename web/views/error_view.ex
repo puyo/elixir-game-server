@@ -1,5 +1,5 @@
-defmodule Testelm.ErrorView do
-  use Testelm.Web, :view
+defmodule GameServer.ErrorView do
+  use GameServer.Web, :view
 
   def render("404.html", _assigns) do
     "Page not found"

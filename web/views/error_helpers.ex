@@ -1,4 +1,4 @@
-defmodule Testelm.ErrorHelpers do
+defmodule GameServer.ErrorHelpers do
   @moduledoc """
   Conveniences for translating and building error messages.
   """
@@ -32,9 +32,9 @@ defmodule Testelm.ErrorHelpers do
     #     dgettext "errors", "is invalid"
     #
     if count = opts[:count] do
-      Gettext.dngettext(Testelm.Gettext, "errors", msg, msg, count, opts)
+      Gettext.dngettext(GameServer.Gettext, "errors", msg, msg, count, opts)
     else
-      Gettext.dgettext(Testelm.Gettext, "errors", msg, opts)
+      Gettext.dgettext(GameServer.Gettext, "errors", msg, opts)
     end
   end
 end

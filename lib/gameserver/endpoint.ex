@@ -1,14 +1,14 @@
-defmodule Testelm.Endpoint do
-  use Phoenix.Endpoint, otp_app: :testelm
+defmodule GameServer.Endpoint do
+  use Phoenix.Endpoint, otp_app: :gameserver
 
-  socket "/socket", Testelm.UserSocket
+  socket "/socket", GameServer.UserSocket
 
   # Serve at "/" the static files from "priv/static" directory.
   #
   # You should set gzip to true if you are running phoenix.digest
   # when deploying your static files in production.
   plug Plug.Static,
-    at: "/", from: :testelm, gzip: false,
+    at: "/", from: :gameserver, gzip: false,
     only: ~w(css fonts images js favicon.ico robots.txt)
 
   # Code reloading can be explicitly enabled under the
@@ -35,8 +35,8 @@ defmodule Testelm.Endpoint do
   # Set :encryption_salt if you would also like to encrypt it.
   plug Plug.Session,
     store: :cookie,
-    key: "_testelm_key",
+    key: "_gameserver_key",
     signing_salt: "et/ErIKO"
 
-  plug Testelm.Router
+  plug GameServer.Router
 end

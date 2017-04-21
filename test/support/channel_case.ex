@@ -1,4 +1,4 @@
-defmodule Testelm.ChannelCase do
+defmodule GameServer.ChannelCase do
   @moduledoc """
   This module defines the test case to be used by
   channel tests.
@@ -22,7 +22,7 @@ defmodule Testelm.ChannelCase do
 
 
       # The default endpoint for testing
-      @endpoint Testelm.Endpoint
+      @endpoint GameServer.Endpoint
     end
   end
 

@@ -1,12 +1,12 @@
-defmodule Testelm.Web do
+defmodule GameServer.Web do
   @moduledoc """
   A module that keeps using definitions for controllers,
   views and so on.
 
   This can be used in your application as:
 
-      use Testelm.Web, :controller
-      use Testelm.Web, :view
+      use GameServer.Web, :controller
+      use GameServer.Web, :view
 
   The definitions below will be executed for every view,
   controller, etc, so keep them short and clean, focused
@@ -26,8 +26,8 @@ defmodule Testelm.Web do
     quote do
       use Phoenix.Controller
 
-      import Testelm.Router.Helpers
-      import Testelm.Gettext
+      import GameServer.Router.Helpers
+      import GameServer.Gettext
     end
   end
 
@@ -41,9 +41,9 @@ defmodule Testelm.Web do
       # Use all HTML functionality (forms, tags, etc)
       use Phoenix.HTML
 
-      import Testelm.Router.Helpers
-      import Testelm.ErrorHelpers
-      import Testelm.Gettext
+      import GameServer.Router.Helpers
+      import GameServer.ErrorHelpers
+      import GameServer.Gettext
     end
   end
 
@@ -56,7 +56,7 @@ defmodule Testelm.Web do
   def channel do
     quote do
       use Phoenix.Channel
-      import Testelm.Gettext
+      import GameServer.Gettext
     end
   end
 

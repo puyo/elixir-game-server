@@ -1,5 +1,5 @@
-defmodule Testelm.Router do
-  use Testelm.Web, :router
+defmodule GameServer.Router do
+  use GameServer.Web, :router
 
   pipeline :browser do
     plug :accepts, ["html"]
@@ -13,14 +13,14 @@ defmodule Testelm.Router do
     plug :accepts, ["json"]
   end
 
-  scope "/", Testelm do
+  scope "/", GameServer do
     pipe_through :browser # Use the default browser stack
 
     get "/", PageController, :index
   end
 
   # Other scopes may use custom stacks.
-  # scope "/api", Testelm do
+  # scope "/api", GameServer do
   #   pipe_through :api
   # end
 end

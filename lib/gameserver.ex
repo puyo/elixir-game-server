@@ -1,4 +1,4 @@
-defmodule Testelm do
+defmodule GameServer do
   use Application
 
   # See http://elixir-lang.org/docs/stable/elixir/Application.html
@@ -9,21 +9,21 @@ defmodule Testelm do
     # Define workers and child supervisors to be supervised
     children = [
       # Start the endpoint when the application starts
-      supervisor(Testelm.Endpoint, []),
-      # Start your own worker by calling: Testelm.Worker.start_link(arg1, arg2, arg3)
-      # worker(Testelm.Worker, [arg1, arg2, arg3]),
+      supervisor(GameServer.Endpoint, []),
+      # Start your own worker by calling: GameServer.Worker.start_link(arg1, arg2, arg3)
+      # worker(GameServer.Worker, [arg1, arg2, arg3]),
     ]
 
     # See http://elixir-lang.org/docs/stable/elixir/Supervisor.html
     # for other strategies and supported options
-    opts = [strategy: :one_for_one, name: Testelm.Supervisor]
+    opts = [strategy: :one_for_one, name: GameServer.Supervisor]
     Supervisor.start_link(children, opts)
   end
 
   # Tell Phoenix to update the endpoint configuration
   # whenever the application is updated.
   def config_change(changed, _new, removed) do
-    Testelm.Endpoint.config_change(changed, removed)
+    GameServer.Endpoint.config_change(changed, removed)
     :ok
   end
 end

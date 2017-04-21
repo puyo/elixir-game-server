@@ -1,3 +1,3 @@
-defmodule Testelm.LayoutViewTest do
-  use Testelm.ConnCase, async: true
+defmodule GameServer.LayoutViewTest do
+  use GameServer.ConnCase, async: true
 end

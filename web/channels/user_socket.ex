@@ -1,9 +1,9 @@
-defmodule Testelm.UserSocket do
+defmodule GameServer.UserSocket do
   use Phoenix.Socket
 
   ## Channels
-  channel "room:lobby", Testelm.RoomChannel
-  # channel "room:*", Testelm.RoomChannel
+  channel "room:lobby", GameServer.RoomChannel
+  # channel "room:*", GameServer.RoomChannel
 
   ## Transports
   transport :websocket, Phoenix.Transports.WebSocket
@@ -31,7 +31,7 @@ defmodule Testelm.UserSocket do
   # Would allow you to broadcast a "disconnect" event and terminate
   # all active sockets and channels for a given user:
   #
-  #     Testelm.Endpoint.broadcast("users_socket:#{user.id}", "disconnect", %{})
+  #     GameServer.Endpoint.broadcast("users_socket:#{user.id}", "disconnect", %{})
   #
   # Returning `nil` makes this socket anonymous.
   def id(_socket), do: nil

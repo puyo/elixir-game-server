@@ -1,3 +1,3 @@
-defmodule Testelm.PageView do
-  use Testelm.Web, :view
+defmodule GameServer.PageView do
+  use GameServer.Web, :view
 end

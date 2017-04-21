@@ -1,8 +1,8 @@
-defmodule Testelm.Mixfile do
+defmodule GameServer.Mixfile do
   use Mix.Project
 
   def project do
-    [app: :testelm,
+    [app: :gameserver,
      version: "0.0.1",
      elixir: "~> 1.2",
      elixirc_paths: elixirc_paths(Mix.env),
@@ -16,7 +16,7 @@ defmodule Testelm.Mixfile do
   #
   # Type `mix help compile.app` for more information.
   def application do
-    [mod: {Testelm, []},
+    [mod: {GameServer, []},
      applications: [:phoenix, :phoenix_pubsub, :phoenix_html, :cowboy, :logger, :gettext]]
   end
 

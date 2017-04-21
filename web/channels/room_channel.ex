@@ -1,5 +1,5 @@
-defmodule Testelm.RoomChannel do
-  use Testelm.Web, :channel
+defmodule GameServer.RoomChannel do
+  use GameServer.Web, :channel
 
   def join("room:lobby", payload, socket) do
     if authorized?(payload) do

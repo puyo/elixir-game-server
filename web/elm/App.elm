@@ -126,8 +126,6 @@ update msg model =
       in
        ({ model | messages = message :: model.messages }, Cmd.none)
 
-
-
 subscriptions : Model -> Sub Msg
 subscriptions model =
   Phoenix.Socket.listen model.phxSocket PhoenixMsg

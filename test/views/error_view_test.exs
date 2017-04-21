@@ -1,21 +1,21 @@
-defmodule Testelm.ErrorViewTest do
-  use Testelm.ConnCase, async: true
+defmodule GameServer.ErrorViewTest do
+  use GameServer.ConnCase, async: true
 
   # Bring render/3 and render_to_string/3 for testing custom views
   import Phoenix.View
 
   test "renders 404.html" do
-    assert render_to_string(Testelm.ErrorView, "404.html", []) ==
+    assert render_to_string(GameServer.ErrorView, "404.html", []) ==
            "Page not found"
   end
 
   test "render 500.html" do
-    assert render_to_string(Testelm.ErrorView, "500.html", []) ==
+    assert render_to_string(GameServer.ErrorView, "500.html", []) ==
            "Internal server error"
   end
 
   test "render any other" do
-    assert render_to_string(Testelm.ErrorView, "505.html", []) ==
+    assert render_to_string(GameServer.ErrorView, "505.html", []) ==
            "Internal server error"
   end
 end
