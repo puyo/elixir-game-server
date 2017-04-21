@@ -6,6 +6,7 @@ import Phoenix.Push
 
 import Html exposing (Html, div, li, ul, text, form, input, button)
 import Html.Events exposing (onInput, onSubmit)
+import Html.Attributes exposing (value)
 
 import Json.Encode as JsEncode
 import Json.Decode as JsDecode
@@ -28,6 +29,7 @@ type Msg =
   | SendMessage
   | ReceiveChatMessage JsEncode.Value
   | HandleSendError JsEncode.Value
+
 
 init : ( Model, Cmd Msg )
 init =
@@ -55,23 +57,23 @@ drawMessage message =
    text message
   ]
 
+drawMessages : List String -> List(Html Msg)
+drawMessages messages =
+  messages |> List.map drawMessage
 
 view : Model -> Html Msg
 view model =
-  let
-   drawMessages messages =
-    messages |> List.map drawMessage
-  in
-    div [] [
-      ul [] (model.messages |> drawMessages),
-      form [ onSubmit SendMessage] [
-       input [ onInput SetMessage ] [
-       ],
-       button [] [
-         text "Submit"
-       ]
+  div [] [
+    ul [] (model.messages |> drawMessages),
+    form [ onSubmit SendMessage] [
+      input [ onInput SetMessage
+            , value model.messageInProgress ] [
+      ],
+      button [] [
+        text "Submit"
       ]
     ]
+  ]
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -83,8 +85,10 @@ update msg model =
        ( { model | phxSocket = phxSocket }
          , Cmd.map PhoenixMsg phxCmd
        )
+
     SetMessage message ->
-      ( { model | messageInProgress = message }, Cmd.none )
+       ( { model | messageInProgress = message }, Cmd.none )
+
     SendMessage ->
       let
         payload =
@@ -107,6 +111,7 @@ update msg model =
         },
         Cmd.map PhoenixMsg phxCmd
       )
+
     ReceiveChatMessage raw ->
       let
        messageDecoder = JsDecode.field "message" JsDecode.string
@@ -119,12 +124,17 @@ update msg model =
             Cmd.none
            )
          Err error ->
-           ( { model | messages = "Failed to receive message" :: model.messages }, Cmd.none )
+           (
+            { model | messages = "Failed to receive message" :: model.messages },
+                Cmd.none
+           )
+
     HandleSendError err ->
       let
        message = "Failed to Send Message"
       in
        ({ model | messages = message :: model.messages }, Cmd.none)
+
 
 subscriptions : Model -> Sub Msg
 subscriptions model =
