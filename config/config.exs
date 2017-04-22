@@ -6,7 +6,7 @@
 use Mix.Config
 
 # Configures the endpoint
-config :gameserver, GameServer.Endpoint,
+config :game_server, GameServer.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "CjEXpDSuArCs4eXKA2f6xEpdkkmcGuCSD6e8KvS/onlUi/y2YAY6y+S33IZb0008",
   render_errors: [view: GameServer.ErrorView, accepts: ~w(html json)],
