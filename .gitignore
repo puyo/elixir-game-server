@@ -34,3 +34,5 @@ tarballs
 elm-stuff
 web/vendor/app.js
 web/static/vendor/*
+
+.DS_Store

@@ -56,7 +56,6 @@ A writing prompt game for poetic types I used to play a lot at university
   game model
     
     users
-      - index (init, sequential)
       - unique player / author id
       - state (ready, etc.)
 

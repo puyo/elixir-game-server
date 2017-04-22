@@ -1,0 +1,123 @@
+$userHeight: 500px;
+$userWidth: 200px;
+$userPaddingTop: 20%;
+$gameWidth: $userHeight;
+$gameHeight: $userHeight;
+
+* {
+  box-sizing: border-box;
+}
+
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  display: none;
+}
+
+.game {
+  margin-bottom: 1rem;
+}
+
+.users {
+  /* background-color: hsla(80, 100%, 50%, 0.1); */
+  position: relative;
+  width: $gameWidth;
+  height: $gameHeight;
+  margin: 0;
+  padding: 0;
+  .user {
+    //background-color: hsla(180, 100%, 50%, 0.1);
+    bottom: 0;
+    left: ($gameWidth - $userWidth)/2;
+    padding-top: $userPaddingTop;
+    width: $userWidth;
+    height: $gameHeight/2;
+    transform-origin: 50% 0%;
+    position: absolute;
+  }
+  .paper-area {
+    border: 1px solid black;
+    width: 100%;
+    top: 60px;
+    bottom: 0;
+    position: absolute;
+  }
+  .papers {
+    background-color: black;
+    height: 20%;
+    padding-left: 0.5em;
+    padding-right: 0.5em;
+  }
+  .paper-icon {
+    display: inline-block;
+    height: 10px;
+    width: 10px;
+    background-color: hsla(180, 100%, 100%, 0.8);
+    &:first-child {
+      background-color: hsla(0, 100%, 70%, 0.8);
+    }
+  }
+  .current-paper {
+    padding: 0.5rem;
+    background-color: white;
+    top: 20px;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    position: absolute;
+    form {
+      margin: 0;
+    }
+    input {
+      padding: 0px 2px;
+      line-height: 1;
+    }
+    textarea {
+      padding: 2px;
+      line-height: 1;
+      height: 60px;
+    }
+  }
+  .name {
+    font-size: 20px;
+    position: absolute;
+    height: 10%;
+    top: 20px;
+    left: 0;
+    right: 0;
+    text-align: center;
+  }
+}
+
+.chat {
+  form {
+    margin-bottom: 0;
+  }
+
+  input[type=text] {
+    width: 50%;
+  }
+
+  .chat-log {
+    margin-top: 0;
+    border: 1px solid black;
+    height: 10em;
+    overflow-y: scroll;
+    list-style-type: none;
+    padding-left: 0.5em;
+  }
+
+  ::-webkit-scrollbar {
+    -webkit-appearance: none;
+    width: 7px;
+  }
+  ::-webkit-scrollbar-thumb {
+    border-radius: 4px;
+    background-color: rgba(0, 0, 0, .5);
+    -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
+  }
+}
+
