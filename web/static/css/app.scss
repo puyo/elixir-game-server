@@ -23,31 +23,47 @@ h1 {
 
 .users {
   /* background-color: hsla(80, 100%, 50%, 0.1); */
-  position: relative;
+  //position: relative;
   width: $gameWidth;
   height: $gameHeight;
   margin: 0;
   padding: 0;
   .user {
+    display: inline-block;
+    position: relative;
+    vertical-align: top;
+
     //background-color: hsla(180, 100%, 50%, 0.1);
-    bottom: 0;
-    left: ($gameWidth - $userWidth)/2;
-    padding-top: $userPaddingTop;
-    width: $userWidth;
-    height: $gameHeight/2;
-    transform-origin: 50% 0%;
-    position: absolute;
+    //bottom: 0;
+    //left: ($gameWidth - $userWidth)/2;
+    //padding-top: $userPaddingTop;
+    //width: $userWidth;
+    //height: $gameHeight/2;
+    //transform-origin: 50% 0%;
+    //position: absolute;
+    &:first-child {
+      //z-index: 100;
+      width: 1.2*$userWidth;
+      height: 1.2*$gameHeight/2;
+      //left: ($gameWidth - 1.2*$userWidth)/2;
+      .paper-area {
+        box-shadow: 0 0 8px rgba(0,0,0,.35);
+        border: 1px solid #ccc;
+      }
+    }
   }
   .paper-area {
-    border: 1px solid black;
-    width: 100%;
-    top: 60px;
-    bottom: 0;
-    position: absolute;
+    box-shadow: 0 0 8px rgba(0,0,0,.075);
+    border: 1px solid #ccc;
+    //width: 100%;
+    //top: 60px;
+    //bottom: 0;
+    //position: absolute;
   }
   .papers {
-    background-color: black;
-    height: 20%;
+    text-align: right;
+    background-color: #ccc;
+    //height: 20%;
     padding-left: 0.5em;
     padding-right: 0.5em;
   }
@@ -63,11 +79,11 @@ h1 {
   .current-paper {
     padding: 0.5rem;
     background-color: white;
-    top: 20px;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    position: absolute;
+    //top: 20px;
+    //bottom: 0;
+    //left: 0;
+    //right: 0;
+    //position: absolute;
     form {
       margin: 0;
     }
@@ -82,13 +98,12 @@ h1 {
     }
   }
   .name {
-    font-size: 20px;
-    position: absolute;
+    font-size: 15px;
     height: 10%;
-    top: 20px;
-    left: 0;
-    right: 0;
-    text-align: center;
+    top: 0px;
+    left: 0.5em;
+    right: 0.5em;
+    text-align: left;
   }
 }
 
@@ -98,12 +113,12 @@ h1 {
   }
 
   input[type=text] {
-    width: 50%;
   }
 
   .chat-log {
     margin-top: 0;
-    border: 1px solid black;
+    border: 1px solid #ccc;
+    border-radius: 4px;
     height: 10em;
     overflow-y: scroll;
     list-style-type: none;

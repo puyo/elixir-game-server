@@ -5,7 +5,7 @@ import Phoenix.Channel
 import Phoenix.Push
 import Html exposing (Html, div, span, li, ul, text, form, input, textarea, button, h1, h2, h3, h4)
 import Html.Events exposing (onInput, onSubmit)
-import Html.Attributes exposing (value, class, style, type_, placeholder)
+import Html.Attributes exposing (value, class, style, type_, placeholder, disabled)
 import Json.Encode as JsEncode
 import Json.Decode as JsDecode
 import Array exposing (Array)
@@ -137,8 +137,9 @@ userDegrees userCount userIndex =
 userStyle : Int -> Int -> Html.Attribute Msg
 userStyle userCount userIndex =
     style
-        [ ( "transform", "rotate(" ++ (toString (userDegrees userCount userIndex)) ++ "deg)" )
+        [
         ]
+        -- [ ( "transform", "rotate(" ++ (toString (userDegrees userCount userIndex)) ++ "deg)" )
 
 
 viewWord : String -> Html Msg
@@ -174,6 +175,7 @@ viewCurrentPaper isCurrent paper =
                             input
                                 [ type_ "text"
                                 , class "form-control input-sm"
+                                , disabled ( p.word == "" )
                                 , placeholder "Question"
                                 , onInput CurrentUserSetQuestion
                                 ]
@@ -185,6 +187,7 @@ viewCurrentPaper isCurrent paper =
                         [ if p.poem == "" then
                             textarea
                                 [ class "form-control input-sm"
+                                , disabled ( p.word == "" || p.question == "" )
                                 , placeholder "Poem"
                                 , onInput CurrentUserSetPoem
                                 ]
@@ -216,7 +219,9 @@ viewUser userCount userIndex user =
             userIndex == 0
     in
         div [ class "user", userStyle userCount userIndex ]
-            [ div [ class "paper-area" ]
+            [ div [ class "name" ]
+                [ text user.name ]
+            , div [ class "paper-area" ]
                 [ div [ class "papers" ]
                     (user.papers
                         |> List.map (\p -> span [ class "paper-icon" ] [])
@@ -224,8 +229,6 @@ viewUser userCount userIndex user =
                     )
                 , viewCurrentPaper isCurrentUser currentPaper
                 ]
-            , div [ class "name" ]
-                [ text user.name ]
             ]
 
 
@@ -242,6 +245,7 @@ view model =
                     (model.users
                         |> Array.indexedMap (viewUser_)
                         |> Array.toList
+                        |> List.intersperse (text " ")
                     )
                 ]
             , div [ class "chat" ]
