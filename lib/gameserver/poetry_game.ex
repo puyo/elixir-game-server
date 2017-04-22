@@ -1,4 +1,4 @@
-defmodule GameServer.GameState do
+defmodule GameServer.PoetryGame do
   @name :game_state
 
   @initial_state %{

@@ -11,7 +11,7 @@ defmodule GameServer.RoomChannel do
       IO.inspect payload
       IO.inspect socket
 
-      # GameServer.GameState.add_user(%{
+      # GameServer.PoetryGame.add_user(%{
       #   name: "xyz"
       # })
       # TODO: if 3 users, assume all ready and start, come back and impl opt in
