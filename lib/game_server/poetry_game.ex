@@ -29,17 +29,14 @@ defmodule GameServer.PoetryGame do
   def start_game(name \\ @name) do
     Agent.get_and_update name, fn state ->
       if length(state.users) < @min_players do
-        { { :error, :too_few_players }, state }
+        {{:error, :too_few_players}, state}
       else
         new_users = state.users
         |> Enum.map(fn user -> user_with_new_paper(user) end)
         state = %{ state | users: new_users }
-        { { :ok, state }, state }
+        {{:ok, state}, state}
       end
     end
-
-    # TODO: if 3 users, assume all ready and start, come back and impl opt in
-
   end
 
   def add_user(user_name, name \\ @name)
@@ -47,15 +44,16 @@ defmodule GameServer.PoetryGame do
   def add_user(user_name, name) do
     Agent.get_and_update name, fn state ->
       if state.users |> Enum.find(with_user_name(user_name)) do
-        { { :error, :name_taken }, state }
+        {{:error, :name_taken}, state}
       else
         new_user = %{
           name: user_name,
-          papers: []
+          papers: [],
+          ready: false,
         }
         new_users = state.users |> List.insert_at(-1, new_user)
         new_state = %{ state | users: new_users }
-        { { :ok, new_state }, new_state }
+        {{:ok, new_state}, new_state}
       end
     end
   end
@@ -65,7 +63,7 @@ defmodule GameServer.PoetryGame do
       new_users = state.users
       |> Enum.reject(with_user_name(user_name))
       new_state = %{ state | users: new_users }
-      { { :ok, new_state }, new_state }
+      {{:ok, new_state}, new_state}
     end
   end
 
@@ -75,6 +73,20 @@ defmodule GameServer.PoetryGame do
 
   defp with_user_name(user_name) do
     fn u -> user_name == u.name end
+  end
+
+  def set_ready(user_name, value, name \\ @name) do
+    Agent.get_and_update name, fn state ->
+      new_users = state.users
+      |> Enum.reject(with_user_name(user_name))
+      new_state = %{ state | users: new_users }
+      {{:ok, new_state}, new_state}
+    end
+  end
+
+  defp update_user(users, user_name, fun) do
+    index = users |> Enum.find_index(with_user_name(user_name))
+    users |> List.update_at(index, fun)
   end
 
   def set_word(user_name, word, name \\ @name) do
@@ -153,7 +165,7 @@ defmodule GameServer.PoetryGame do
       end
 
       new_state = %{ state | users: new_users }
-      { { :ok, new_state }, new_state }
+      {{:ok, new_state}, new_state}
     end
   end
 end

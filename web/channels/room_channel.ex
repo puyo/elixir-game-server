@@ -3,15 +3,30 @@ defmodule GameServer.RoomChannel do
 
   alias GameServer.PoetryGame
 
-  def user_name do
-    Inspect.inspect(self(), []) |> String.slice(5..-2)
+  defp user_name do
+    Inspect.inspect(self(), [])
+    |> String.slice(5..-2)
+  end
+
+  defp with_user_index(state) do
+    index = state.users
+    |> Enum.find_index(fn u -> u.name == user_name end)
+    len = length(state.users)
+    new_users = state.users
+    |> Stream.cycle
+    |> Enum.slice(index, len)
+    %{ state | users: new_users }
+    |> Map.put(:current_user_index, 0)
   end
 
   def join("room:lobby", payload, socket) do
     if authorized?(payload) do
-      { :ok, state } = PoetryGame.add_user(user_name)
-
-      { :ok, state, socket}
+      {:ok, state} = PoetryGame.add_user(user_name)
+      if length(state.users) >= 3 do
+        {:ok, state} = PoetryGame.start_game
+        broadcast socket, "start", state
+      end
+      {:ok, state, socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
@@ -32,15 +47,25 @@ defmodule GameServer.RoomChannel do
       "user" => user,
       "word" => word
     } = payload
-    #IO.inspect poem, user, word
     {:reply, {:ok, payload}, socket}
   end
 
   # It is also common to receive messages from the client and
   # broadcast to everyone in the current topic (room:lobby).
+  def handle_in("ready", payload, socket) do
+    {:ok, state} = PoetryGame.set_ready(user_name)
+    {:reply, {:ok, state}, socket}
+  end
+
+  # It is also common to receive messages from the client and
+  # broadcast to everyone in the current topic (room:lobby).
   def handle_in("shout", payload, socket) do
-    #IO.inspect fn: :shout, payload: payload
     broadcast socket, "shout", payload
+    {:noreply, socket}
+  end
+
+  def handle_out("start", payload, socket) do
+    push socket, "new_msg", payload |> with_user_index
     {:noreply, socket}
   end
 
@@ -50,7 +75,6 @@ defmodule GameServer.RoomChannel do
   # end
 
   def terminate(reason, socket) do
-    #IO.inspect fn: :terminate, reason: reason
     PoetryGame.remove_user(user_name)
   end
 
