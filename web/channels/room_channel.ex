@@ -1,23 +1,17 @@
 defmodule GameServer.RoomChannel do
   use GameServer.Web, :channel
-  require Logger
+
+  alias GameServer.PoetryGame
+
+  def user_name do
+    Inspect.inspect(self(), []) |> String.slice(5..-2)
+  end
 
   def join("room:lobby", payload, socket) do
     if authorized?(payload) do
+      { :ok, state } = PoetryGame.add_user(user_name)
 
-      IO.puts "----- JOIN"
-      socket.transport_pid
-      IO.inspect self()
-      IO.inspect payload
-      IO.inspect socket
-
-      # GameServer.PoetryGame.add_user(%{
-      #   name: "xyz"
-      # })
-      # TODO: if 3 users, assume all ready and start, come back and impl opt in
-
-      # ready functionality
-      { :ok, %{"something" => "here"}, socket}
+      { :ok, state, socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
@@ -38,19 +32,14 @@ defmodule GameServer.RoomChannel do
       "user" => user,
       "word" => word
     } = payload
-    IO.inspect poem, user, word
+    #IO.inspect poem, user, word
     {:reply, {:ok, payload}, socket}
   end
 
   # It is also common to receive messages from the client and
   # broadcast to everyone in the current topic (room:lobby).
   def handle_in("shout", payload, socket) do
-    IO.puts "----- SHOUT"
-    socket.transport_pid
-    IO.inspect self()
-    IO.inspect payload
-    IO.inspect socket
-
+    #IO.inspect fn: :shout, payload: payload
     broadcast socket, "shout", payload
     {:noreply, socket}
   end
@@ -61,10 +50,8 @@ defmodule GameServer.RoomChannel do
   # end
 
   def terminate(reason, socket) do
-    IO.puts "----- TERMINATE"
-    IO.inspect reason
-    IO.inspect self()
-    :ok
+    #IO.inspect fn: :terminate, reason: reason
+    PoetryGame.remove_user(user_name)
   end
 
   # Add authorization logic here as required.

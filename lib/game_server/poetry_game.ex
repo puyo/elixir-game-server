@@ -1,18 +1,18 @@
 defmodule GameServer.PoetryGame do
-  @name :game_state
+  @name :poetry_game
 
   @initial_state %{
     users: [],
-    chatMessages: []
+    chat_messages: []
   }
 
   @initial_paper %{
     word: nil,
     question: nil,
     poem: nil,
-    wordAuthor: nil,
-    questionAuthor: nil,
-    poemAuthor: nil,
+    word_author: nil,
+    question_author: nil,
+    poem_author: nil,
   }
 
   @min_players 3
@@ -29,13 +29,17 @@ defmodule GameServer.PoetryGame do
   def start_game(name \\ @name) do
     Agent.get_and_update name, fn state ->
       if length(state.users) < @min_players do
-        {{:error, :too_few_players}, state}
+        { { :error, :too_few_players }, state }
       else
         new_users = state.users
         |> Enum.map(fn user -> user_with_new_paper(user) end)
-        { :ok, %{ state | users: new_users } }
+        state = %{ state | users: new_users }
+        { { :ok, state }, state }
       end
     end
+
+    # TODO: if 3 users, assume all ready and start, come back and impl opt in
+
   end
 
   def add_user(user_name, name \\ @name)
@@ -43,28 +47,30 @@ defmodule GameServer.PoetryGame do
   def add_user(user_name, name) do
     Agent.get_and_update name, fn state ->
       if state.users |> Enum.find(with_user_name(user_name)) do
-        {{:error, :name_taken}, state}
+        { { :error, :name_taken }, state }
       else
         new_user = %{
           name: user_name,
           papers: []
         }
         new_users = state.users |> List.insert_at(-1, new_user)
-        {:ok, %{ state | users: new_users } }
+        new_state = %{ state | users: new_users }
+        { { :ok, new_state }, new_state }
       end
     end
   end
 
   def remove_user(user_name, name \\ @name) do
-    Agent.update name, fn state ->
+    Agent.get_and_update name, fn state ->
       new_users = state.users
       |> Enum.reject(with_user_name(user_name))
-      %{ state | users: new_users }
+      new_state = %{ state | users: new_users }
+      { { :ok, new_state }, new_state }
     end
   end
 
   defp user_with_new_paper(user) do
-    %{ user | papers: [ %{ @initial_paper | wordAuthor: user.name } ]}
+    %{ user | papers: [ %{ @initial_paper | word_author: user.name } ]}
   end
 
   defp with_user_name(user_name) do
@@ -72,15 +78,15 @@ defmodule GameServer.PoetryGame do
   end
 
   def set_word(user_name, word, name \\ @name) do
-    set_value(user_name, :word, :wordAuthor, word, false, name)
+    set_value(user_name, :word, :word_author, word, false, name)
   end
 
   def set_question(user_name, question, name \\ @name) do
-    set_value(user_name, :question, :questionAuthor, question, false, name)
+    set_value(user_name, :question, :question_author, question, false, name)
   end
 
   def set_poem(user_name, poem, name \\ @name) do
-    set_value(user_name, :poem, :poemAuthor, poem, true, name)
+    set_value(user_name, :poem, :poem_author, poem, true, name)
   end
 
   defp update_paper_in_place(users, user_index, new_paper) do
@@ -125,7 +131,7 @@ defmodule GameServer.PoetryGame do
   end
 
   defp set_value(user_name, key, author_key, value, is_last_key, name) do
-    Agent.update name, fn state ->
+    Agent.get_and_update name, fn state ->
       old_index = state.users
       |> Enum.find_index(with_user_name(user_name))
 
@@ -146,7 +152,8 @@ defmodule GameServer.PoetryGame do
         update_paper_and_move(state.users, old_index, new_paper)
       end
 
-      %{ state | users: new_users }
+      new_state = %{ state | users: new_users }
+      { { :ok, new_state }, new_state }
     end
   end
 end
