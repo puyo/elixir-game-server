@@ -6,44 +6,41 @@ import Phoenix.Push
 import Html exposing (Html, div, span, li, ul, text, form, input, textarea, button, h1, h2, h3, h4)
 import Html.Events exposing (onInput, onSubmit)
 import Html.Attributes exposing (value, class, style, type_, placeholder, disabled)
-import Json.Encode as JsEncode
-import Json.Decode as JsDecode
+import Json.Encode as JE
+import Json.Decode as JD
 import Array exposing (Array)
+import Debug
 
 
 type alias Model =
     { phxSocket : Phoenix.Socket.Socket Msg
-    , currentUserIndex : Int
     , users : Array User
     , chatInputText : String
-    , chatMessages : List String
-    }
-
-
-type alias User =
-    { id : Int
+    , chatMessages : List ChatMessage
     , name : String
-    , state : UserState
-    , papers : List Paper
     , currentWordInputText : String
     , currentQuestionInputText : String
     , currentPoemInputText : String
     }
 
 
-type UserState
-    = UserNotPlaying
-    | UserReady
-    | UserWritingWord
-    | UserWritingQuestion
-    | UserWritingPoem
-    | UserReadingResults
+type alias User =
+    { name : String
+    , state : String
+    , papers : List Paper
+    }
 
 
 type alias Paper =
-    { word : String
-    , question : String
-    , poem : String
+    { word : Maybe String
+    , question : Maybe String
+    , poem : Maybe String
+    }
+
+
+type alias ChatMessage =
+    { from : String
+    , message : String
     }
 
 
@@ -51,14 +48,22 @@ type Msg
     = PhoenixMsg (Phoenix.Socket.Msg Msg)
     | ChatSetMessage String
     | ChatSendMessage
-    | ChatReceiveMessage JsEncode.Value
-    | ChatHandleSendError JsEncode.Value
+    | ChatReceiveMessage JE.Value
+    | ChatHandleSendError JE.Value
     | CurrentUserSetWord String
     | CurrentUserSetQuestion String
     | CurrentUserSetPoem String
-    | SubmitPaper
-    | SubmitPaperOk JsEncode.Value
-    | SubmitPaperError JsEncode.Value
+    | SubmitWord
+    | SubmitWordOk JE.Value
+    | SubmitWordError JE.Value
+    | SubmitQuestion
+    | SubmitQuestionOk JE.Value
+    | SubmitQuestionError JE.Value
+    | SubmitPoem
+    | SubmitPoemOk JE.Value
+    | SubmitPoemError JE.Value
+    | NameMessage JE.Value
+    | StateMessage JE.Value
 
 
 type alias ChatMessagePayload =
@@ -81,49 +86,19 @@ init =
             Phoenix.Socket.init socketServer
                 |> Phoenix.Socket.withDebug
                 |> Phoenix.Socket.on "shout" "room:lobby" ChatReceiveMessage
+                |> Phoenix.Socket.on "name" "room:lobby" NameMessage
+                |> Phoenix.Socket.on "state" "room:lobby" StateMessage
                 |> Phoenix.Socket.join channel
 
         model =
             { phxSocket = initSocket
+            , name = ""
             , chatInputText = ""
             , chatMessages = []
-            , currentUserIndex = 0
-            , users =
-                Array.fromList
-                    [ { id = 1
-                      , name = "A"
-                      , state = UserNotPlaying
-                      , currentWordInputText = ""
-                      , currentQuestionInputText = ""
-                      , currentPoemInputText = ""
-                      , papers =
-                            [ { word = ""
-                              , question = ""
-                              , poem = ""
-                              }
-                            , { word = ""
-                              , question = ""
-                              , poem = ""
-                              }
-                            ]
-                      }
-                    , { id = 2
-                      , name = "B"
-                      , state = UserNotPlaying
-                      , currentWordInputText = ""
-                      , currentQuestionInputText = ""
-                      , currentPoemInputText = ""
-                      , papers = []
-                      }
-                    , { id = 3
-                      , name = "C"
-                      , state = UserNotPlaying
-                      , currentWordInputText = ""
-                      , currentQuestionInputText = ""
-                      , currentPoemInputText = ""
-                      , papers = []
-                      }
-                    ]
+            , currentWordInputText = ""
+            , currentQuestionInputText = ""
+            , currentPoemInputText = ""
+            , users = Array.fromList []
             }
     in
         ( model, Cmd.map PhoenixMsg phxCmd )
@@ -137,9 +112,11 @@ userDegrees userCount userIndex =
 userStyle : Int -> Int -> Html.Attribute Msg
 userStyle userCount userIndex =
     style
-        [
-        ]
-        -- [ ( "transform", "rotate(" ++ (toString (userDegrees userCount userIndex)) ++ "deg)" )
+        []
+
+
+
+-- [ ( "transform", "rotate(" ++ (toString (userDegrees userCount userIndex)) ++ "deg)" )
 
 
 viewWord : String -> Html Msg
@@ -157,9 +134,9 @@ viewCurrentPaper isCurrent paper =
     case paper of
         Just p ->
             div [ class "current-paper" ]
-                [ form [ class "form", onSubmit SubmitPaper ]
-                    [ div [ class "word" ]
-                        [ if p.word == "" then
+                [ form [ class "form word", onSubmit SubmitWord ]
+                    [ case ( p.word, p.question ) of
+                        ( Nothing, _ ) ->
                             input
                                 [ type_ "text"
                                 , class "form-control input-sm"
@@ -167,40 +144,57 @@ viewCurrentPaper isCurrent paper =
                                 , onInput CurrentUserSetWord
                                 ]
                                 []
-                          else
-                            text ("Word: " ++ p.word)
-                        ]
-                    , div [ class "question" ]
-                        [ if p.question == "" then
+
+                        ( Just w, Nothing ) ->
+                            text "(Word entered)"
+
+                        -- hide the word while entering the question
+                        ( Just w, Just q ) ->
+                            text ("Word: " ++ w)
+                    ]
+                , form [ class "form question", onSubmit SubmitQuestion ]
+                    [ case ( p.word, p.question ) of
+                        ( Nothing, _ ) ->
                             input
                                 [ type_ "text"
                                 , class "form-control input-sm"
-                                , disabled ( p.word == "" )
+                                , disabled True
                                 , placeholder "Question"
                                 , onInput CurrentUserSetQuestion
                                 ]
                                 []
-                          else
-                            text ("Question: " ++ p.question)
-                        ]
-                    , div [ class "poem" ]
-                        [ if p.poem == "" then
+
+                        ( Just w, Nothing ) ->
+                            input
+                                [ type_ "text"
+                                , class "form-control input-sm"
+                                , placeholder "Question"
+                                , onInput CurrentUserSetQuestion
+                                ]
+                                []
+
+                        ( Just w, Just q ) ->
+                            text ("Question: " ++ q)
+                    ]
+                , form [ class "form poem", onSubmit SubmitPoem ]
+                    [ (case p.poem of
+                        Just poem ->
+                            div []
+                                [ text "Poem:"
+                                , div [ class "poem-rendered" ]
+                                    [ text poem ]
+                                ]
+
+                        Nothing ->
                             textarea
                                 [ class "form-control input-sm"
-                                , disabled ( p.word == "" || p.question == "" )
+                                , disabled (p.word == Nothing || p.question == Nothing)
                                 , placeholder "Poem"
                                 , onInput CurrentUserSetPoem
                                 ]
                                 []
-                          else
-                            div []
-                                [ text "Poem:"
-                                , div [ class "poem-rendered" ]
-                                    [ text p.poem ]
-                                ]
-                        ]
-                    , div [ class "buttons" ]
-                        [ button [ class "btn btn-sm btn-primary" ] [ text "Submit" ] ]
+                      )
+                    , button [ class "btn btn-sm btn-primary" ] [ text "Send" ]
                     ]
                 ]
 
@@ -209,16 +203,32 @@ viewCurrentPaper isCurrent paper =
                 [ text "No paper!" ]
 
 
-viewUser : Int -> Int -> User -> Html Msg
-viewUser userCount userIndex user =
+isFinished : Maybe Paper -> Bool
+isFinished paper =
+    case paper of
+        Nothing ->
+            False
+        Just p ->
+            case (p.word, p.question, p.poem) of
+                (Just w, Just q, Just p) -> True
+                (_, _, _) -> False
+
+viewUser : String -> Int -> Int -> User -> Html Msg
+viewUser name userCount userIndex user =
     let
         currentPaper =
             List.head user.papers
 
         isCurrentUser =
-            userIndex == 0
+            name == user.name
+
+        htmlClass =
+            if isCurrentUser then
+                "user me"
+            else
+                "user other"
     in
-        div [ class "user", userStyle userCount userIndex ]
+        div [ class htmlClass, userStyle userCount userIndex ]
             [ div [ class "name" ]
                 [ text user.name ]
             , div [ class "paper-area" ]
@@ -227,7 +237,12 @@ viewUser userCount userIndex user =
                         |> List.map (\p -> span [ class "paper-icon" ] [])
                         |> (List.intersperse (text " "))
                     )
-                , viewCurrentPaper isCurrentUser currentPaper
+                , (if isCurrentUser || (isFinished currentPaper) then
+                    viewCurrentPaper isCurrentUser currentPaper
+                   else
+                    div [ class "current-paper" ]
+                        [ text "(Hidden)" ]
+                  )
                 ]
             ]
 
@@ -236,7 +251,7 @@ view : Model -> Html Msg
 view model =
     let
         viewUser_ =
-            viewUser (Array.length (model.users))
+            viewUser model.name (Array.length (model.users))
     in
         div []
             [ h1 [] [ text "Poetry" ]
@@ -262,146 +277,228 @@ view model =
                         ]
                     ]
                 , ul [ class "chat-log" ]
-                    (model.chatMessages |> List.map (\m -> li [] [ text m ]))
+                    (model.chatMessages
+                        |> List.map (\m -> li [] [ text (m.from ++ ": " ++ m.message) ])
+                    )
                 ]
             ]
 
 
+type alias ServerState =
+    { users : Array User
+    }
+
+
+decodeServerPaper : JD.Decoder Paper
+decodeServerPaper =
+    JD.map3 Paper
+        (JD.maybe (JD.field "word" JD.string))
+        (JD.maybe (JD.field "question" JD.string))
+        (JD.maybe (JD.field "poem" JD.string))
+
+
+decodeServerUser : JD.Decoder User
+decodeServerUser =
+    JD.map3 User
+        (JD.field "name" JD.string)
+        (JD.field "state" JD.string)
+        (JD.field "papers" (JD.list decodeServerPaper))
+
+
+decodeServerState : JD.Decoder ServerState
+decodeServerState =
+    JD.map ServerState
+        (JD.field "users" (JD.array decodeServerUser))
+
+
+decodeChatMessage : JD.Decoder ChatMessage
+decodeChatMessage =
+    JD.map2 ChatMessage
+        (JD.field "from" JD.string)
+        (JD.field "message" JD.string)
+
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
-    let
-        currentUser =
-            Array.get model.currentUserIndex model.users
-    in
-        case ( currentUser, msg ) of
-            ( Nothing, _ ) ->
-                ( model, Cmd.none )
+    case msg of
+        -- JSON MESSAGES FROM SERVER
+        StateMessage json ->
+            let
+                log =
+                    Debug.log "resp" response
 
-            -- SUBMIT PAPER
-            ( Just user, SubmitPaper ) ->
-                let
-                    payload =
-                        JsEncode.object
-                            [ ( "word", JsEncode.string user.currentWordInputText )
-                            , ( "question", JsEncode.string user.currentQuestionInputText )
-                            , ( "poem", JsEncode.string user.currentPoemInputText )
-                            , ( "user", JsEncode.int model.currentUserIndex )
-                            ]
+                response =
+                    JD.decodeValue decodeServerState json
+            in
+                case response of
+                    Ok state ->
+                        -- TODO: update model with state msg
+                        ( { model | users = state.users }, Cmd.none )
 
-                    phxPush =
-                        Phoenix.Push.init "paper" "room:lobby"
-                            |> Phoenix.Push.withPayload payload
-                            |> Phoenix.Push.onOk SubmitPaperOk
-                            |> Phoenix.Push.onError SubmitPaperError
+                    Err error ->
+                        ( { model | chatMessages = { message = "Failed to receive state", from = "Server" } :: model.chatMessages }
+                        , Cmd.none
+                        )
 
-                    ( phxSocket, phxCmd ) =
-                        Phoenix.Socket.push phxPush model.phxSocket
-                in
-                    ( { model
-                        | chatInputText = ""
-                        , phxSocket = phxSocket
-                      }
-                    , Cmd.map PhoenixMsg phxCmd
-                    )
+        NameMessage json ->
+            let
+                response =
+                    JD.decodeValue (JD.field "name" JD.string) json
+            in
+                case response of
+                    Ok message ->
+                        ( { model | name = message }
+                        , Cmd.none
+                        )
 
-            ( Just user, SubmitPaperOk status ) ->
-                ( model, Cmd.none )
+                    Err error ->
+                        ( { model | chatMessages = { message = "Failed to receive message", from = "Server" } :: model.chatMessages }
+                        , Cmd.none
+                        )
 
-            ( Just user, SubmitPaperError err ) ->
-                ( model, Cmd.none )
+        -- SUBMIT
+        SubmitWord ->
+            let
+                payload =
+                    JE.object
+                        [ ( "word", JE.string model.currentWordInputText )
+                        ]
 
-            -- USER TYPING
-            ( Just user, CurrentUserSetWord word ) ->
-                let
-                    newUser =
-                        { user | currentWordInputText = word }
+                phxPush =
+                    Phoenix.Push.init "set_word" "room:lobby"
+                        |> Phoenix.Push.withPayload payload
+                        |> Phoenix.Push.onOk SubmitWordOk
+                        |> Phoenix.Push.onError SubmitWordError
 
-                    newUsers =
-                        Array.set model.currentUserIndex newUser model.users
-                in
-                    ( { model | users = newUsers }, Cmd.none )
+                ( phxSocket, phxCmd ) =
+                    Phoenix.Socket.push phxPush model.phxSocket
+            in
+                ( { model | currentWordInputText = "", phxSocket = phxSocket }, Cmd.map PhoenixMsg phxCmd )
 
-            ( Just user, CurrentUserSetQuestion question ) ->
-                let
-                    newUser =
-                        { user | currentQuestionInputText = question }
+        SubmitWordOk status ->
+            ( model, Cmd.none )
 
-                    newUsers =
-                        Array.set model.currentUserIndex newUser model.users
-                in
-                    ( { model | users = newUsers }, Cmd.none )
+        SubmitWordError err ->
+            ( model, Cmd.none )
 
-            ( Just user, CurrentUserSetPoem poem ) ->
-                let
-                    newUser =
-                        { user | currentPoemInputText = poem }
+        SubmitQuestion ->
+            let
+                payload =
+                    JE.object
+                        [ ( "question", JE.string model.currentQuestionInputText )
+                        ]
 
-                    newUsers =
-                        Array.set model.currentUserIndex newUser model.users
-                in
-                    ( { model | users = newUsers }, Cmd.none )
+                phxPush =
+                    Phoenix.Push.init "set_question" "room:lobby"
+                        |> Phoenix.Push.withPayload payload
+                        |> Phoenix.Push.onOk SubmitQuestionOk
+                        |> Phoenix.Push.onError SubmitQuestionError
 
-            -- CHAT
-            ( _, ChatSetMessage message ) ->
-                ( { model | chatInputText = message }, Cmd.none )
+                ( phxSocket, phxCmd ) =
+                    Phoenix.Socket.push phxPush model.phxSocket
+            in
+                ( { model | currentQuestionInputText = "", phxSocket = phxSocket }, Cmd.map PhoenixMsg phxCmd )
 
-            ( _, ChatSendMessage ) ->
-                let
-                    payload =
-                        JsEncode.object
-                            [ ( "message", JsEncode.string model.chatInputText )
-                            ]
+        SubmitQuestionOk status ->
+            ( model, Cmd.none )
 
-                    phxPush =
-                        Phoenix.Push.init "shout" "room:lobby"
-                            |> Phoenix.Push.withPayload payload
-                            |> Phoenix.Push.onOk ChatReceiveMessage
-                            |> Phoenix.Push.onError ChatHandleSendError
+        SubmitQuestionError err ->
+            ( model, Cmd.none )
 
-                    ( phxSocket, phxCmd ) =
-                        Phoenix.Socket.push phxPush model.phxSocket
-                in
-                    ( { model
-                        | chatInputText = ""
-                        , phxSocket = phxSocket
-                      }
-                    , Cmd.map PhoenixMsg phxCmd
-                    )
+        SubmitPoem ->
+            let
+                payload =
+                    JE.object
+                        [ ( "poem", JE.string model.currentPoemInputText )
+                        ]
 
-            ( _, ChatReceiveMessage raw ) ->
-                let
-                    messageDecoder =
-                        JsDecode.field "message" JsDecode.string
+                phxPush =
+                    Phoenix.Push.init "set_poem" "room:lobby"
+                        |> Phoenix.Push.withPayload payload
+                        |> Phoenix.Push.onOk SubmitPoemOk
+                        |> Phoenix.Push.onError SubmitPoemError
 
-                    somePayload =
-                        JsDecode.decodeValue messageDecoder raw
-                in
-                    case somePayload of
-                        Ok payload ->
-                            ( { model | chatMessages = payload :: model.chatMessages }
-                            , Cmd.none
-                            )
+                ( phxSocket, phxCmd ) =
+                    Phoenix.Socket.push phxPush model.phxSocket
+            in
+                ( { model | currentPoemInputText = "", phxSocket = phxSocket }, Cmd.map PhoenixMsg phxCmd )
 
-                        Err error ->
-                            ( { model | chatMessages = "Failed to receive message" :: model.chatMessages }
-                            , Cmd.none
-                            )
+        SubmitPoemOk status ->
+            ( model, Cmd.none )
 
-            ( _, ChatHandleSendError err ) ->
-                let
-                    message = "Failed to Send Message"
-                in
-                    ( { model | chatMessages = message :: model.chatMessages }, Cmd.none )
+        SubmitPoemError err ->
+            ( model, Cmd.none )
 
-            -- PHOENIX CONTROL MESSAGES (heartbeats, pings)
-            ( _, PhoenixMsg msg ) ->
-                let
-                    ( phxSocket, phxCmd ) =
-                        Phoenix.Socket.update msg model.phxSocket
-                in
-                    ( { model | phxSocket = phxSocket }
-                    , Cmd.map PhoenixMsg phxCmd
-                    )
+        -- USER TYPING
+        CurrentUserSetWord word ->
+            ( { model | currentWordInputText = word }, Cmd.none )
+
+        CurrentUserSetQuestion question ->
+            ( { model | currentQuestionInputText = question }, Cmd.none )
+
+        CurrentUserSetPoem poem ->
+            ( { model | currentPoemInputText = poem }, Cmd.none )
+
+        -- CHAT
+        ChatSetMessage message ->
+            ( { model | chatInputText = message }, Cmd.none )
+
+        ChatSendMessage ->
+            let
+                payload =
+                    JE.object
+                        [ ( "from", JE.string model.name )
+                        , ( "message", JE.string model.chatInputText )
+                        ]
+
+                phxPush =
+                    Phoenix.Push.init "shout" "room:lobby"
+                        |> Phoenix.Push.withPayload payload
+                        |> Phoenix.Push.onOk ChatReceiveMessage
+                        |> Phoenix.Push.onError ChatHandleSendError
+
+                ( phxSocket, phxCmd ) =
+                    Phoenix.Socket.push phxPush model.phxSocket
+            in
+                ( { model
+                    | chatInputText = ""
+                    , phxSocket = phxSocket
+                  }
+                , Cmd.map PhoenixMsg phxCmd
+                )
+
+        ChatReceiveMessage json ->
+            let
+                somePayload =
+                    JD.decodeValue decodeChatMessage json
+            in
+                case somePayload of
+                    Ok payload ->
+                        ( { model | chatMessages = payload :: model.chatMessages }
+                        , Cmd.none
+                        )
+
+                    Err error ->
+                        ( { model | chatMessages = { message = "Failed to receive message", from = "Server" } :: model.chatMessages }
+                        , Cmd.none
+                        )
+
+        ChatHandleSendError err ->
+            let
+                message =
+                    { message = "Failed to Send Message", from = "Server" }
+            in
+                ( { model | chatMessages = message :: model.chatMessages }, Cmd.none )
+
+        -- PHOENIX CONTROL MESSAGES (heartbeats, pings)
+        PhoenixMsg msg ->
+            let
+                ( phxSocket, phxCmd ) =
+                    Phoenix.Socket.update msg model.phxSocket
+            in
+                ( { model | phxSocket = phxSocket }
+                , Cmd.map PhoenixMsg phxCmd
+                )
 
 
 subscriptions : Model -> Sub Msg

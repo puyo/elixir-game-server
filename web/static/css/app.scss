@@ -19,13 +19,14 @@ h1 {
 
 .game {
   margin-bottom: 1rem;
+  min-height: 230px;
 }
 
 .users {
   /* background-color: hsla(80, 100%, 50%, 0.1); */
   //position: relative;
-  width: $gameWidth;
-  height: $gameHeight;
+  // width: $gameWidth;
+  // height: $gameHeight;
   margin: 0;
   padding: 0;
   .user {
@@ -41,14 +42,17 @@ h1 {
     //height: $gameHeight/2;
     //transform-origin: 50% 0%;
     //position: absolute;
-    &:first-child {
+    &.me {
       //z-index: 100;
-      width: 1.2*$userWidth;
-      height: 1.2*$gameHeight/2;
+      // width: 1.2*$userWidth;
+      // height: 1.2*$gameHeight/2;
       //left: ($gameWidth - 1.2*$userWidth)/2;
       .paper-area {
-        box-shadow: 0 0 8px rgba(0,0,0,.35);
-        border: 1px solid #ccc;
+        // box-shadow: 0 0 8px rgba(0,0,255,.35);
+        // border: 1px solid #ccc;
+        border-color: #66afe9;
+        outline: 0;
+        box-shadow: 0 0 8px rgba(102,175,233,.6);
       }
     }
   }
@@ -61,6 +65,7 @@ h1 {
     //position: absolute;
   }
   .papers {
+    height: 20px;
     text-align: right;
     background-color: #ccc;
     //height: 20%;
