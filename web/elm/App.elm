@@ -3,7 +3,7 @@ module App exposing (..)
 import Phoenix.Socket
 import Phoenix.Channel
 import Phoenix.Push
-import Html exposing (Html, div, span, li, ul, text, form, input, textarea, button, h1, h2, h3, h4)
+import Html exposing (Html, div, span, li, ul, text, strong, form, input, textarea, button, h1, h2, h3, h4)
 import Html.Events exposing (onInput, onSubmit)
 import Html.Attributes exposing (value, class, style, type_, placeholder, disabled)
 import Json.Encode as JE
@@ -71,9 +71,22 @@ type alias ChatMessagePayload =
     }
 
 
+type alias ServerState =
+    { users : Array User
+    }
+
+
+
+-- ----------------------------------------------------------------------
+
+
 socketServer : String
 socketServer =
     "ws://localhost:4000/socket/websocket"
+
+
+
+-- ----------------------------------------------------------------------
 
 
 init : ( Model, Cmd Msg )
@@ -104,29 +117,8 @@ init =
         ( model, Cmd.map PhoenixMsg phxCmd )
 
 
-userDegrees : Int -> Int -> Int
-userDegrees userCount userIndex =
-    round ((toFloat userIndex) * 360.0 / (toFloat userCount))
 
-
-userStyle : Int -> Int -> Html.Attribute Msg
-userStyle userCount userIndex =
-    style
-        []
-
-
-
--- [ ( "transform", "rotate(" ++ (toString (userDegrees userCount userIndex)) ++ "deg)" )
-
-
-viewWord : String -> Html Msg
-viewWord word =
-    case word of
-        "" ->
-            div [] []
-
-        _ ->
-            div [] []
+-- ----------------------------------------------------------------------
 
 
 viewCurrentPaper : Bool -> Maybe Paper -> Html Msg
@@ -150,7 +142,10 @@ viewCurrentPaper isCurrent paper =
 
                         -- hide the word while entering the question
                         ( Just w, Just q ) ->
-                            text ("Word: " ++ w)
+                            span []
+                                [ strong [] [ text "Word: " ]
+                                , text w
+                                ]
                     ]
                 , form [ class "form question", onSubmit SubmitQuestion ]
                     [ case ( p.word, p.question ) of
@@ -174,27 +169,36 @@ viewCurrentPaper isCurrent paper =
                                 []
 
                         ( Just w, Just q ) ->
-                            text ("Question: " ++ q)
+                            span []
+                                [ strong [] [ text "Question: " ]
+                                , text q
+                                ]
                     ]
                 , form [ class "form poem", onSubmit SubmitPoem ]
                     [ (case p.poem of
                         Just poem ->
                             div []
-                                [ text "Poem:"
+                                [ strong [] [ text "Poem:" ]
                                 , div [ class "poem-rendered" ]
                                     [ text poem ]
                                 ]
 
                         Nothing ->
-                            textarea
-                                [ class "form-control input-sm"
-                                , disabled (p.word == Nothing || p.question == Nothing)
-                                , placeholder "Poem"
-                                , onInput CurrentUserSetPoem
+                            div []
+                                [ textarea
+                                    [ class "form-control input-sm"
+                                    , disabled (p.word == Nothing || p.question == Nothing)
+                                    , placeholder "Poem"
+                                    , onInput CurrentUserSetPoem
+                                    ]
+                                    []
+                                , (if p.word /= Nothing && p.question /= Nothing then
+                                    button [ class "btn btn-sm btn-primary btn-reveal" ] [ text "Reveal" ]
+                                   else
+                                    span [] []
+                                  )
                                 ]
-                                []
                       )
-                    , button [ class "btn btn-sm btn-primary" ] [ text "Send" ]
                     ]
                 ]
 
@@ -208,10 +212,15 @@ isFinished paper =
     case paper of
         Nothing ->
             False
+
         Just p ->
-            case (p.word, p.question, p.poem) of
-                (Just w, Just q, Just p) -> True
-                (_, _, _) -> False
+            case ( p.word, p.question, p.poem ) of
+                ( Just w, Just q, Just p ) ->
+                    True
+
+                ( _, _, _ ) ->
+                    False
+
 
 viewUser : String -> Int -> Int -> User -> Html Msg
 viewUser name userCount userIndex user =
@@ -222,13 +231,26 @@ viewUser name userCount userIndex user =
         isCurrentUser =
             name == user.name
 
+        noPaper =
+            List.length (user.papers) == 0
+
         htmlClass =
-            if isCurrentUser then
-                "user me"
-            else
-                "user other"
+            (String.join " "
+                [ "user"
+                , (if noPaper then
+                    "no-paper"
+                   else
+                    "has-paper"
+                  )
+                , (if isCurrentUser then
+                    "me"
+                   else
+                    "other"
+                  )
+                ]
+            )
     in
-        div [ class htmlClass, userStyle userCount userIndex ]
+        div [ class htmlClass ]
             [ div [ class "name" ]
                 [ text user.name ]
             , div [ class "paper-area" ]
@@ -284,9 +306,8 @@ view model =
             ]
 
 
-type alias ServerState =
-    { users : Array User
-    }
+
+-- ----------------------------------------------------------------------
 
 
 decodeServerPaper : JD.Decoder Paper
@@ -316,6 +337,10 @@ decodeChatMessage =
     JD.map2 ChatMessage
         (JD.field "from" JD.string)
         (JD.field "message" JD.string)
+
+
+
+-- ----------------------------------------------------------------------
 
 
 update : Msg -> Model -> ( Model, Cmd Msg )

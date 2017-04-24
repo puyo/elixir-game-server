@@ -128,7 +128,7 @@ defmodule GameServer.RoomChannel do
 
   def terminate(reason, socket) do
     {:ok, state} = PoetryGame.remove_user(user_name)
-    push socket, "state", state
+    broadcast socket, "state", state
     {:ok}
   end
 
