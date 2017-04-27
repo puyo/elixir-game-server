@@ -103,27 +103,16 @@ defmodule GameServer.PoetryGame do
   end
 
   defp update_paper_and_move(users, user_index, new_paper) do
+    {old_paper, users} = pop_in(
+      users,
+      [Access.at(user_index), :papers, Access.at(0)]
+    )
     insert_index = rem(user_index + 1, length(users))
-
-    users
-    |> Enum.with_index
-    |> Enum.map(fn ({user, index}) ->
-      cond do
-        index == user_index ->
-          [_old_paper | new_papers] = user.papers
-
-          %{ user | papers: new_papers }
-
-        index == insert_index ->
-          new_papers = user.papers
-          |> List.insert_at(-1, new_paper)
-
-          %{ user | papers: new_papers }
-
-        true ->
-          user
-      end
-    end)
+    users = update_in(
+      users,
+      [Access.at(insert_index), :papers],
+      fn papers -> List.insert_at(papers, -1, new_paper) end
+    )
   end
 
   defp set_value(user_name, key, value, is_last_key, name) do
