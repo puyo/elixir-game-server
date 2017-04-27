@@ -49,74 +49,57 @@ defmodule GameServer.PoetryGameTest do
     assert state.users == []
   end
 
-  test "set word" do
-    {:ok, _} = PoetryGame.add_user("A", @name)
-    {:ok, _} = PoetryGame.add_user("B", @name)
-    {:ok, _} = PoetryGame.add_user("C", @name)
-    {:ok, _} = PoetryGame.start_game(@name)
-    {:ok, state} = PoetryGame.set_word("A", "Pea", @name)
-    assert state == %{
-      chat_messages: [],
-      users: [
-        %{name: "A", papers: [], state: :playing},
-        %{name: "B",
-          papers: [
-            %{poem: nil, question: nil, word: nil},
-            %{poem: nil, question: nil, word: "Pea"}
-          ],
-          state: :playing
-        },
-        %{name: "C",
-          papers: [
-            %{poem: nil, question: nil, word: nil}
-          ],
-          state: :playing
-        }
-      ]
-    }
-  end
-
-  test "set question" do
+  test "set word, question, poem" do
     {:ok, _} = PoetryGame.add_user("A", @name)
     {:ok, _} = PoetryGame.add_user("B", @name)
     {:ok, _} = PoetryGame.add_user("C", @name)
     {:ok, _} = PoetryGame.start_game(@name)
     {:ok, state} = PoetryGame.set_word("A", "WA", @name)
-    assert state == %{
-      chat_messages: [],
-      users: [
-        %{name: "A", papers: [], state: :playing},
-        %{name: "B",
-          papers: [
-            %{poem: nil, question: nil, word: nil},
-            %{poem: nil, question: nil, word: "WA"}
-          ],
-          state: :playing
-        },
-        %{name: "C",
-          papers: [
-            %{poem: nil, question: nil, word: nil}
-          ],
-          state: :playing
-        }
-      ]
-    }
+    assert state.users == [
+      %{name: "A", papers: [], state: :playing},
+      %{name: "B",
+        papers: [
+          %{poem: nil, question: nil, word: nil},
+          %{poem: nil, question: nil, word: "WA"}
+        ],
+        state: :playing
+      },
+      %{name: "C",
+        papers: [
+          %{poem: nil, question: nil, word: nil}
+        ],
+        state: :playing
+      }
+    ]
     {:ok, _} = PoetryGame.set_word("B", "WB", @name)
     {:ok, state} = PoetryGame.set_question("B", "QB", @name)
-    assert state == %{
-      chat_messages: [],
-      users: [
-        %{name: "A", papers: [], state: :playing},
-        %{name: "B", papers: [], state: :playing},
-        %{name: "C",
-          papers: [
-            %{poem: nil, question: nil, word: nil},
-            %{poem: nil, question: nil, word: "WB"},
-            %{poem: nil, question: "QB", word: "WA"}
-          ],
-          state: :playing
-        }
-      ]
-    }
+    assert state.users == [
+      %{name: "A", papers: [], state: :playing},
+      %{name: "B", papers: [], state: :playing},
+      %{name: "C",
+        papers: [
+          %{poem: nil, question: nil, word: nil},
+          %{poem: nil, question: nil, word: "WB"},
+          %{poem: nil, question: "QB", word: "WA"}
+        ],
+        state: :playing
+      }
+    ]
+    {:ok, _} = PoetryGame.set_word("C", "C", @name)
+    {:ok, _} = PoetryGame.set_question("C", "QC", @name)
+    {:ok, state} = PoetryGame.set_poem("C", "PC", @name)
+    assert state.users == [
+      %{name: "A", papers: [
+           %{poem: nil, question: nil, word: "C"},
+           %{poem: nil, question: "QC", word: "WB"}
+         ], state: :playing},
+      %{name: "B", papers: [], state: :playing},
+      %{name: "C",
+        papers: [
+          %{poem: "PC", question: "QB", word: "WA"}
+        ],
+        state: :playing
+      }
+    ]
   end
 end

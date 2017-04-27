@@ -82,11 +82,6 @@ defmodule GameServer.PoetryGame do
   #   end
   # end
 
-  defp update_user(users, user_name, fun) do
-    index = users |> Enum.find_index(with_user_name(user_name))
-    users |> List.update_at(index, fun)
-  end
-
   def set_word(user_name, word, name \\ @name) do
     set_value(user_name, :word, word, false, name)
   end
@@ -100,20 +95,11 @@ defmodule GameServer.PoetryGame do
   end
 
   defp update_paper_in_place(users, user_index, new_paper) do
-    users
-    |> Enum.with_index
-    |> Enum.map(fn ({user, index}) ->
-      cond do
-        index == user_index ->
-          new_papers = user.papers
-          |> List.replace_at(0, new_paper)
-
-          %{ user | papers: new_papers }
-
-        true ->
-          user
-      end
-    end)
+    put_in(
+      users,
+      [Access.at(user_index), :papers, Access.at(0)],
+      new_paper
+    )
   end
 
   defp update_paper_and_move(users, user_index, new_paper) do
@@ -152,7 +138,7 @@ defmodule GameServer.PoetryGame do
 
       new_paper = %{ old_paper | key => value }
 
-      IO.inspect old_paper: old_paper, new_paper: new_paper, key: key, vaue: value
+      # IO.inspect old_paper: old_paper, new_paper: new_paper, key: key, vaue: value
 
       new_users = if is_last_key do
         update_paper_in_place(state.users, old_index, new_paper)
