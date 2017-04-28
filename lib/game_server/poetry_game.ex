@@ -123,11 +123,9 @@ defmodule GameServer.PoetryGame do
       old_user = state.users
       |> Enum.at(old_index)
 
-      [old_paper|_rest] = old_user.papers
+      [old_paper|_] = old_user.papers
 
       new_paper = %{ old_paper | key => value }
-
-      # IO.inspect old_paper: old_paper, new_paper: new_paper, key: key, vaue: value
 
       new_users = if is_last_key do
         update_paper_in_place(state.users, old_index, new_paper)
