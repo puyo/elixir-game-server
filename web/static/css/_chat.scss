@@ -13,6 +13,7 @@ $chat-border-radius: 4px;
       border-bottom-left-radius: 0;
       border-bottom-right-radius: 0;
       border-top-right-radius: 0;
+      box-shadow: none;
     }
   }
 
@@ -24,8 +25,7 @@ $chat-border-radius: 4px;
     overflow-y: scroll;
     height: $chat-height - $input-height-base;
     list-style-type: none;
-    padding-left: 0.5em;
-    padding-top: 0.5em;
+    padding: $padding-base-vertical $padding-base-horizontal;
     border-top: 0;
   }
 
@@ -38,7 +38,7 @@ $chat-border-radius: 4px;
     width: 20%;
     margin: 0;
     height: $chat-height;
-    padding: 0.5em;
+    padding: $padding-base-vertical $padding-base-horizontal;
     overflow-y: scroll;
 
     ul {
