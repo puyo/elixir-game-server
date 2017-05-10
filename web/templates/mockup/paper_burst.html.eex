@@ -1,13 +1,6 @@
 <div class="row">
-    <div class="col-sm-2">
-        <div class="user has-paper other">
-            <h3 class="name">Vera</h3>
-            <div class="papers"><span class="paper-icon"></span></div>
-            <div class="status">Waiting on Ringo</div>
-        </div>
-    </div>
 
-    <div class="col-sm-8">
+    <div class="col-sm-5 col-sm-offset-1">
         <div class="user has-paper me">
             <h3 class="name">Chuck</h3>
             <div class="papers"><span class="paper-icon"></span></div>
@@ -29,7 +22,12 @@
         </p>
     </div>
 
-    <div class="col-sm-2">
+    <div class="col-sm-2 col-sm-offset-1">
+        <div class="user has-paper other">
+            <h3 class="name">Vera</h3>
+            <div class="papers"><span class="paper-icon"></span></div>
+            <div class="status">Waiting on Ringo</div>
+        </div>
         <div class="user has-paper other">
             <h3 class="name">Dave</h3>
             <div class="papers"><span class="paper-icon"></span></div>
