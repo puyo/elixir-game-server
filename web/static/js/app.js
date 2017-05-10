@@ -21,5 +21,5 @@
 
 var elmDiv = document.getElementById('elm-main');
 if (elmDiv != null) {
-  Elm.App.embed(elmDiv);
+  Elm.Poetry.embed(elmDiv);
 }

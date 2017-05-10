@@ -1,4 +1,4 @@
-module App exposing (..)
+module Poetry exposing (..)
 
 import Phoenix.Socket
 import Phoenix.Channel
@@ -10,6 +10,9 @@ import Json.Encode as JE
 import Json.Decode as JD
 import Array exposing (Array)
 import Debug
+import Navigation
+import UrlParser
+import Regex
 
 
 type alias Model =
@@ -46,6 +49,7 @@ type alias ChatMessage =
 
 type Msg
     = PhoenixMsg (Phoenix.Socket.Msg Msg)
+    | LocationChange Navigation.Location
     | ChatSetMessage String
     | ChatSendMessage
     | ChatReceiveMessage JE.Value
@@ -80,23 +84,62 @@ type alias ServerState =
 -- ----------------------------------------------------------------------
 
 
-socketServer : String
-socketServer =
-    "ws://localhost:4000/socket/websocket"
+type Route
+    = HomeRoute
+    | NotFoundRoute
 
+
+matchers : UrlParser.Parser (Route -> a) a
+matchers =
+    UrlParser.oneOf
+        [ UrlParser.map HomeRoute UrlParser.top
+        ]
+
+
+parseLocation : Navigation.Location -> Route
+parseLocation location =
+    case (UrlParser.parsePath matchers location) of
+        Just route ->
+            route
+
+        Nothing ->
+            NotFoundRoute
+
+
+wsOrigin : Navigation.Location -> String
+wsOrigin location =
+    Regex.replace
+        (Regex.AtMost 1)
+        (Regex.regex "^http")
+        (\_ -> "ws")
+        location.origin
+
+
+websocketServerAddress : Navigation.Location -> String
+websocketServerAddress location =
+    [ wsOrigin location
+    , "/socket/websocket"
+    ]
+        |> String.join ""
 
 
 -- ----------------------------------------------------------------------
 
 
-init : ( Model, Cmd Msg )
-init =
+init : Navigation.Location -> ( Model, Cmd Msg )
+init location =
     let
+        currentRoute =
+            parseLocation location
+
+        socketServerAddress =
+            websocketServerAddress location
+
         channel =
             Phoenix.Channel.init "room:lobby"
 
         ( initSocket, phxCmd ) =
-            Phoenix.Socket.init socketServer
+            Phoenix.Socket.init socketServerAddress
                 |> Phoenix.Socket.withDebug
                 |> Phoenix.Socket.on "shout" "room:lobby" ChatReceiveMessage
                 |> Phoenix.Socket.on "name" "room:lobby" NameMessage
@@ -350,7 +393,7 @@ update msg model =
         StateMessage json ->
             let
                 log =
-                    Debug.log "resp" response
+                    Debug.log "response" response
 
                 response =
                     JD.decodeValue decodeServerState json
@@ -364,6 +407,9 @@ update msg model =
                         ( { model | chatMessages = { message = "Failed to receive state", from = "Server" } :: model.chatMessages }
                         , Cmd.none
                         )
+
+        LocationChange location ->
+            ( model, Cmd.none )
 
         NameMessage json ->
             let
@@ -533,7 +579,7 @@ subscriptions model =
 
 main : Program Never Model Msg
 main =
-    Html.program
+    Navigation.program LocationChange
         { init = init
         , view = view
         , update = update

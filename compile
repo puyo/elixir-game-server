@@ -1,0 +1,8 @@
+info "Building Phoenix static assets"
+cd $phoenix_dir
+
+# cf. https://github.com/madsflensted/elm-brunch/issues/35
+yarn run deploy # elm -> js
+yarn run deploy # include resulting js into app.js
+
+mix "${phoenix_ex}.digest"

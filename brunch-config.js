@@ -2,7 +2,10 @@ exports.config = {
   // See http://brunch.io/#documentation for docs.
   files: {
     javascripts: {
-      joinTo: "js/app.js"
+      joinTo: "js/app.js",
+      order: {
+        before: ["web/static/vendor/poetry.js"]
+      }
 
       // To use a separate vendor.js bundle, specify two files path
       // http://brunch.io/docs/config#-files-
@@ -55,9 +58,9 @@ exports.config = {
     elmBrunch: {
       executablePath: '../../node_modules/elm/binwrappers',
       elmFolder: 'web/elm',
-      mainModules: ['App.elm'],
+      mainModules: ['Poetry.elm'],
       outputFolder: '../static/vendor',
-      makeParameters : []
+      makeParameters: ['--debug']
     },
     babel: {
       // Do not use ES6 compiler in vendor code
@@ -70,6 +73,16 @@ exports.config = {
       options: {
         includePaths: ["node_modules/bootstrap-sass/assets/stylesheets"],
         precision: 8
+      }
+    }
+  },
+
+  overrides: {
+    production: {
+      plugins: {
+        elmBrunch: {
+          makeParameters: []
+        }
       }
     }
   },
