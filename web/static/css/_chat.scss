@@ -1,0 +1,57 @@
+$chat-height: 200px;
+$chat-border-radius: 4px;
+
+.chat {
+  margin-bottom: $form-group-margin-bottom;
+
+  form {
+    float: left;
+    width: 80%;
+    height: $chat-height;
+    margin: 0;
+    input[type=text] {
+      border-bottom-left-radius: 0;
+      border-bottom-right-radius: 0;
+      border-top-right-radius: 0;
+    }
+  }
+
+  .log {
+    border: 1px solid #ccc;
+    background-color: white;
+    margin-top: 0;
+    border-radius: 0 0 0 $chat-border-radius;
+    overflow-y: scroll;
+    height: $chat-height - $input-height-base;
+    list-style-type: none;
+    padding-left: 0.5em;
+    padding-top: 0.5em;
+    border-top: 0;
+  }
+
+  .members {
+    border: 1px solid #ccc;
+    border-radius: 0 $chat-border-radius $chat-border-radius 0;
+    background-color: white;
+    border-width: 1px 1px 1px 0;
+    float: right;
+    width: 20%;
+    margin: 0;
+    height: $chat-height;
+    padding: 0.5em;
+    overflow-y: scroll;
+
+    ul {
+      padding: 0;
+      margin: 0;
+      list-style-type: none;
+    }
+  }
+
+  &:after {
+    content: "";
+    display: table;
+    clear: both;
+  }
+
+}

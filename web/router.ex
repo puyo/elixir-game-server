@@ -17,6 +17,10 @@ defmodule GameServer.Router do
     pipe_through :browser # Use the default browser stack
 
     get "/", PageController, :index
+
+    scope "/mockups" do
+      get "/paper_burst", MockupController, :paper_burst
+    end
   end
 
   # Other scopes may use custom stacks.

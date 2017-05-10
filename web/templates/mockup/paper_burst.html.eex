@@ -1,0 +1,83 @@
+<div class="row">
+    <div class="col-sm-2">
+        <div class="user has-paper other">
+            <h3 class="name">Vera</h3>
+            <div class="papers"><span class="paper-icon"></span></div>
+            <div class="status">Waiting on Ringo</div>
+        </div>
+    </div>
+
+    <div class="col-sm-8">
+        <div class="user has-paper me">
+            <h3 class="name">Chuck</h3>
+            <div class="papers"><span class="paper-icon"></span></div>
+            <div class="paper">
+                <form>
+                    <input type="text" placeholder="Word" value="architecture">
+                </form>
+                <form>
+                    <input type="text" placeholder="Question">
+                </form>
+                <form>
+                    <div contenteditable="true" class="poem" placeholder="Poem"></div>
+                    <!-- <textarea placeholder="Poem"></textarea> -->
+                </form>
+            </div>
+        </div>
+        <p class="text-center">
+            <button class="btn btn-sm btn-default">Reveal</button>
+        </p>
+    </div>
+
+    <div class="col-sm-2">
+        <div class="user has-paper other">
+            <h3 class="name">Dave</h3>
+            <div class="papers"><span class="paper-icon"></span></div>
+            <div class="status">Writing poem</div>
+        </div>
+    </div>
+</div>
+
+<div class="chat">
+    <form class="form">
+        <input type="text" placeholder="Message" class="form-control">
+        <div class="log">
+            <p><strong class="name">Vera</strong><span class="divider">: </span><span class="message">Hi there</span></p>
+            <p><strong class="name">Vera</strong><span class="divider">: </span><span class="message">Hi there this is another message form me and I'm the best chuck out the rest. Yes that was a joke on the name chuck. Chuck that guy OUT.</span></p>
+            <p><strong class="name">Vera</strong><span class="divider">: </span><span class="message">Hi there this is another message form me and I'm the best chuck out the rest. Yes that was a joke on the name chuck. Chuck that guy OUT.</span></p>
+            <p><strong class="name">Vera</strong><span class="divider">: </span><span class="message">Hi there this is another message form me and I'm the best chuck out the rest. Yes that was a joke on the name chuck. Chuck that guy OUT.</span></p>
+            <p><strong class="name">Vera</strong><span class="divider">: </span><span class="message">Hi there this is another message form me and I'm the best chuck out the rest. Yes that was a joke on the name chuck. Chuck that guy OUT.</span></p>
+            <p><strong class="name">Vera</strong><span class="divider">: </span><span class="message">Hi there this is another message form me and I'm the best chuck out the rest. Yes that was a joke on the name chuck. Chuck that guy OUT.</span></p>
+            <p><strong class="name">Vera</strong><span class="divider">: </span><span class="message">Hi there this is another message form me and I'm the best chuck out the rest. Yes that was a joke on the name chuck. Chuck that guy OUT.</span></p>
+        </div>
+    </form>
+    <div class="members">
+        <ul>
+            <li>Vera</li>
+            <li>Chuck</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+            <li>Dave</li>
+        </ul>
+    </div>
+</div>

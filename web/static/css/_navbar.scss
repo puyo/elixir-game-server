@@ -1,0 +1,11 @@
+.navbar {
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.1);
+}
+.navbar-fixed-top + div {
+  padding-top: $navbar-height + $navbar-margin-bottom;
+}
+
+.navbar-brand {
+  padding: 2px 0;
+  margin-left: 0 !important;
+}

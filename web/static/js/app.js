@@ -19,5 +19,7 @@
 
 // import socket from "./socket"
 
-var elmDiv = document.getElementById('elm-main')
-  , elmApp = Elm.App.embed(elmDiv);
+var elmDiv = document.getElementById('elm-main');
+if (elmDiv != null) {
+  Elm.App.embed(elmDiv);
+}

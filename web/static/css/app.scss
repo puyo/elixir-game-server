@@ -1,8 +1,45 @@
-$userHeight: 500px;
-$userWidth: 200px;
-$userPaddingTop: 20%;
-$gameWidth: $userHeight;
-$gameHeight: $userHeight;
+$icon-font-path: "/fonts/";
+$body-bg: #EFEFEB;
+
+@import "bootstrap";
+@import "chat";
+@import "navbar";
+@import "contenteditable";
+
+.user {
+  margin-bottom: 10px;
+  border-radius: 10px;
+  .name {
+    margin-top: 0;
+    font-size: $font-size-large;
+  }
+}
+
+.paper {
+  background-color: white;
+  padding: $padding-large-vertical $padding-large-horizontal;
+  box-shadow: 0 1px 2px 1px rgba(0, 0, 0, 0.3);
+  font-size: $font-size-large;
+
+  form {
+    margin-bottom: $form-group-margin-bottom;
+  }
+  input[type="text"], [contenteditable] {
+    outline: none;
+    width: 100%;
+  }
+  input[type="text"] {
+    border-width: 0 0 1px 0;
+    border-color: $input-color-placeholder;
+    border-style: dashed;
+  }
+  .poem {
+    min-height: 10em;
+  }
+}
+
+
+/*
 
 * {
   box-sizing: border-box;
@@ -11,10 +48,6 @@ $gameHeight: $userHeight;
 html, body {
   margin: 0;
   padding: 0;
-}
-
-h1 {
-  display: none;
 }
 
 .game {
@@ -124,4 +157,4 @@ h1 {
     -webkit-box-shadow: 0 0 1px rgba(255, 255, 255, .5);
   }
 }
-
+*/
