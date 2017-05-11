@@ -3,9 +3,9 @@ module Poetry exposing (..)
 import Phoenix.Socket
 import Phoenix.Channel
 import Phoenix.Push
-import Html exposing (Html, div, span, li, ul, text, strong, form, input, textarea, button, h1, h2, h3, h4)
-import Html.Events exposing (onInput, onSubmit)
-import Html.Attributes exposing (value, class, style, type_, placeholder, disabled)
+import Html exposing (Html, div, span, li, ul, text, strong, form, input, button, h1, h2, h3, h4, p)
+import Html.Events exposing (onInput, onSubmit, onClick, on)
+import Html.Attributes exposing (value, class, style, type_, placeholder, disabled, contenteditable, attribute)
 import Json.Encode as JE
 import Json.Decode as JD
 import Array exposing (Array)
@@ -64,6 +64,7 @@ type Msg
     | SubmitQuestionOk JE.Value
     | SubmitQuestionError JE.Value
     | SubmitPoem
+    | SavePoem String
     | SubmitPoemOk JE.Value
     | SubmitPoemError JE.Value
     | NameMessage JE.Value
@@ -123,6 +124,7 @@ websocketServerAddress location =
         |> String.join ""
 
 
+
 -- ----------------------------------------------------------------------
 
 
@@ -168,13 +170,12 @@ viewCurrentPaper : Bool -> Maybe Paper -> Html Msg
 viewCurrentPaper isCurrent paper =
     case paper of
         Just p ->
-            div [ class "current-paper" ]
-                [ form [ class "form word", onSubmit SubmitWord ]
+            div [ class "paper" ]
+                [ form [ onSubmit SubmitWord ]
                     [ case ( p.word, p.question ) of
                         ( Nothing, _ ) ->
                             input
                                 [ type_ "text"
-                                , class "form-control input-sm"
                                 , placeholder "Word"
                                 , onInput CurrentUserSetWord
                                 ]
@@ -190,22 +191,21 @@ viewCurrentPaper isCurrent paper =
                                 , text w
                                 ]
                     ]
-                , form [ class "form question", onSubmit SubmitQuestion ]
+                , form [ onSubmit SubmitQuestion ]
                     [ case ( p.word, p.question ) of
                         ( Nothing, _ ) ->
-                            input
-                                [ type_ "text"
-                                , class "form-control input-sm"
-                                , disabled True
-                                , placeholder "Question"
-                                , onInput CurrentUserSetQuestion
-                                ]
-                                []
+                            div [] []
 
+                        -- input
+                        --     [ type_ "text"
+                        --     , disabled True
+                        --     , placeholder "Question"
+                        --     , onInput CurrentUserSetQuestion
+                        --     ]
+                        --     []
                         ( Just w, Nothing ) ->
                             input
                                 [ type_ "text"
-                                , class "form-control input-sm"
                                 , placeholder "Question"
                                 , onInput CurrentUserSetQuestion
                                 ]
@@ -217,8 +217,19 @@ viewCurrentPaper isCurrent paper =
                                 , text q
                                 ]
                     ]
-                , form [ class "form poem", onSubmit SubmitPoem ]
-                    [ (case p.poem of
+                , viewPoem p
+                ]
+
+        Nothing ->
+            div [ class "current-paper" ]
+                [ text "No paper!" ]
+
+viewPoem : Paper -> Html Msg
+viewPoem paper =
+    let
+        readyToInput = paper.word /= Nothing && paper.question /= Nothing
+    in
+                    (case paper.poem of
                         Just poem ->
                             div []
                                 [ strong [] [ text "Poem:" ]
@@ -227,27 +238,34 @@ viewCurrentPaper isCurrent paper =
                                 ]
 
                         Nothing ->
-                            div []
-                                [ textarea
-                                    [ class "form-control input-sm"
-                                    , disabled (p.word == Nothing || p.question == Nothing)
-                                    , placeholder "Poem"
-                                    , onInput CurrentUserSetPoem
+                            form [ onSubmit SubmitPoem ]
+                                [ div
+                                    [ class "poem"
+                                    , contenteditable readyToInput
+                                    , attribute "placeholder" "Poem"
+                                    , on "input" (
+                                                   JD.map
+                                                       SavePoem
+                                                       targetTextContent
+                                                  )
+
                                     ]
                                     []
-                                , (if p.word /= Nothing && p.question /= Nothing then
-                                    button [ class "btn btn-sm btn-primary btn-reveal" ] [ text "Reveal" ]
+                                , (if readyToInput then
+                                    button [
+                                         class "btn btn-sm btn-default btn-reveal"
+                                        ]
+                                       [ text "Reveal" ]
                                    else
                                     span [] []
                                   )
                                 ]
                       )
-                    ]
-                ]
 
-        Nothing ->
-            div [ class "current-paper" ]
-                [ text "No paper!" ]
+
+targetTextContent : JD.Decoder String
+targetTextContent =
+  JD.at ["target", "innerText"] JD.string
 
 
 isFinished : Maybe Paper -> Bool
@@ -305,12 +323,38 @@ viewUser name userCount userIndex user =
                 , (if isCurrentUser || (isFinished currentPaper) then
                     viewCurrentPaper isCurrentUser currentPaper
                    else
-                    div [ class "current-paper" ]
+                    div [ class "status" ]
                         [ text "(Hidden)" ]
                   )
                 ]
             ]
 
+
+viewChat : Model -> Html Msg
+viewChat model =
+    div [ class "chat" ]
+        [ form [ class "form", onSubmit ChatSendMessage ]
+            [ input
+                [ type_ "text"
+                , class "form-control"
+                , onInput ChatSetMessage
+                , value model.chatInputText
+                ]
+                []
+            , div [ class "log" ]
+                (model.chatMessages
+                    |> List.map (\m -> p [] [ text (m.from ++ ": " ++ m.message) ])
+                )
+            ]
+        , div [ class "members" ]
+            [ ul []
+                (Array.toList (Array.map viewMemberItem model.users))
+            ]
+        ]
+
+viewMemberItem : User -> Html Msg
+viewMemberItem user =
+    li [] [ text user.name ]
 
 view : Model -> Html Msg
 view model =
@@ -319,8 +363,7 @@ view model =
             viewUser model.name (Array.length (model.users))
     in
         div []
-            [ h1 [] [ text "Poetry" ]
-            , div [ class "game" ]
+            [ div [ class "game" ]
                 [ div [ class "users" ]
                     (model.users
                         |> Array.indexedMap (viewUser_)
@@ -328,24 +371,7 @@ view model =
                         |> List.intersperse (text " ")
                     )
                 ]
-            , div [ class "chat" ]
-                [ form [ class "form form-inline", onSubmit ChatSendMessage ]
-                    [ div [ class "form-group" ]
-                        [ input
-                            [ type_ "text"
-                            , class "form-control"
-                            , onInput ChatSetMessage
-                            , value model.chatInputText
-                            ]
-                            []
-                        , button [ class "btn btn-default" ] [ text "Send" ]
-                        ]
-                    ]
-                , ul [ class "chat-log" ]
-                    (model.chatMessages
-                        |> List.map (\m -> li [] [ text (m.from ++ ": " ++ m.message) ])
-                    )
-                ]
+            , viewChat model
             ]
 
 
@@ -384,7 +410,6 @@ decodeChatMessage =
 
 
 -- ----------------------------------------------------------------------
-
 
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
@@ -475,6 +500,12 @@ update msg model =
 
         SubmitQuestionError err ->
             ( model, Cmd.none )
+
+        SavePoem str ->
+            let
+                log = Debug.log "SAVING POEM" str
+            in
+                ( { model | currentPoemInputText = str }, Cmd.none )
 
         SubmitPoem ->
             let
