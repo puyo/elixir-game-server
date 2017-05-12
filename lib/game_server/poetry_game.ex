@@ -27,15 +27,20 @@ defmodule GameServer.PoetryGame do
 
   def start_game(pid) do
     Agent.get_and_update pid, fn state ->
-      if map_size(state.room.members) < @min_players do
-        {{:error, :too_few_players}, state}
-      else
-        new_players = state.room.members
-        |> Enum.map(&player_from_member/1)
-        new_state = put_in(state, [:game, :players], new_players)
-        {{:ok, new_state}, new_state}
+      cond do
+        map_size(state.room.members) < @min_players ->
+          {{:error, :too_few_players}, state}
+        true ->
+          new_state = new_game_state(state)
+          {{:ok, new_state}, new_state}
       end
     end
+  end
+
+  defp new_game_state(state) do
+    new_players = state.room.members
+    |> Enum.map(&player_from_member/1)
+    put_in(state, [:game, :players], new_players)
   end
 
   # TODO: decide what to do when somebody up and leaves mid-game

@@ -19,7 +19,7 @@ defmodule GameServer.RoomChannel do
     if authorized?(payload) do
       {:ok, state} = Room.add_room_member(@name, user_name())
       send(self(), :after_join)
-      if map_size(state.room.members) >= 3 do
+      if map_size(state.room.members) >= 3 && length(state.game.players) == 0 do
         send(self(), :start_game)
       end
       {:ok, %{name: user_name()}, socket}
@@ -100,7 +100,7 @@ defmodule GameServer.RoomChannel do
   #
   # https://stackoverflow.com/questions/33934029/how-to-detect-if-a-user-left-a-phoenix-channel-due-to-a-network-disconnect
   def terminate({_, reason}, socket) do
-    {:ok, state} = Room.remove_room_member(@name, user_name())
+    {:ok, _} = Room.remove_room_member(@name, user_name())
     broadcast socket, "shout", %{from: "Server", message: "User #{user_name()} left (#{reason})"}
     {:ok, state} = PoetryGame.remove_player(@name, user_name())
     broadcast socket, "state", state
