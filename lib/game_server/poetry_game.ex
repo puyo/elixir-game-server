@@ -1,9 +1,10 @@
 defmodule GameServer.PoetryGame do
+  alias GameServer.Room
+
   @name :poetry_game
 
-  @initial_state %{
-    users: [],
-    chat_messages: []
+  @initial_game_state %{
+    players: []
   }
 
   @initial_paper %{
@@ -16,124 +17,106 @@ defmodule GameServer.PoetryGame do
 
   def start_link(opts \\ []) do
     opts = Keyword.put_new(opts, :name, @name)
-    Agent.start_link(fn -> @initial_state end, opts)
+    state = add_initial_state(Room.initial_state())
+    Agent.start_link(fn -> state end, opts)
   end
 
-  def get(name \\ @name) do
-    Agent.get name, fn state -> state end
+  defp add_initial_state(state) do
+    %{ state | game: @initial_game_state }
   end
 
-  def add_user(user_name, name \\ @name)
-  def add_user("", _), do: {:error, :name_too_short}
-  def add_user(user_name, name) do
-    Agent.get_and_update name, fn state ->
-      if state.users |> Enum.find(with_user_name(user_name)) do
-        {{:error, :name_taken}, state}
+  def start_game(pid) do
+    Agent.get_and_update pid, fn state ->
+      if map_size(state.room.members) < @min_players do
+        {{:error, :too_few_players}, state}
       else
-        new_user = %{
-          name: user_name,
-          papers: [],
-          state: :not_playing
-        }
-        new_users = state.users |> List.insert_at(-1, new_user)
-        new_state = %{ state | users: new_users }
+        new_players = state.room.members
+        |> Enum.map(&player_from_member/1)
+        new_state = put_in(state, [:game, :players], new_players)
         {{:ok, new_state}, new_state}
       end
     end
   end
 
-  def remove_user(user_name, name \\ @name) do
-    Agent.get_and_update name, fn state ->
-      new_users = state.users
-      |> Enum.reject(with_user_name(user_name))
-      new_state = %{ state | users: new_users }
-      {{:ok, new_state}, new_state}
-    end
-  end
-
-  def start_game(name \\ @name) do
-    Agent.get_and_update name, fn state ->
-      if length(state.users) < @min_players do
-        {{:error, :too_few_players}, state}
+  # TODO: decide what to do when somebody up and leaves mid-game
+  #
+  # Currently, if one of the players leaves, just end the game completely and
+  # potentially re-start it
+  #
+  def remove_player(pid, user_name) do
+    Agent.get_and_update pid, fn state ->
+      if is_playing(state, user_name) do
+        new_state = %{ state | game: @initial_game_state }
+        {{:ok, new_state}, new_state}
       else
-        new_users = state.users
-        |> Enum.map(fn user -> user_with_new_paper(user) end)
-        state = %{ state | users: new_users }
         {{:ok, state}, state}
       end
     end
   end
 
-  defp user_with_new_paper(user) do
-    new_paper = @initial_paper
-    %{ user | state: :playing, papers: [ new_paper ] }
+  defp is_playing(state, user_name) do
+    index = state.game.players
+    |> Enum.find_index(fn u -> user_name == u.name end)
+    index != nil
   end
 
-  defp with_user_name(user_name) do
-    fn u -> user_name == u.name end
+  def set_word(pid, user_name, word) do
+    set_value(pid, user_name, :word, word, false)
   end
 
-  # def set_ready(user_name, value, name \\ @name) do
-  #   Agent.get_and_update name, fn state ->
-  #     new_users = state.users
-  #     |> Enum.reject(with_user_name(user_name))
-  #     new_state = %{ state | users: new_users }
-  #     {{:ok, new_state}, new_state}
-  #   end
-  # end
-
-  def set_word(user_name, word, name \\ @name) do
-    set_value(user_name, :word, word, false, name)
+  def set_question(pid, user_name, question) do
+    set_value(pid, user_name, :question, question, false)
   end
 
-  def set_question(user_name, question, name \\ @name) do
-    set_value(user_name, :question, question, false, name)
+  def set_poem(pid, user_name, poem) do
+    set_value(pid, user_name, :poem, poem, true)
   end
 
-  def set_poem(user_name, poem, name \\ @name) do
-    set_value(user_name, :poem, poem, true, name)
+  defp player_from_member({name, _member}) do
+    %{ name: name, papers: [ @initial_paper ] }
   end
 
-  defp update_paper_in_place(users, user_index, new_paper) do
+  defp update_paper_in_place(players, player_index, new_paper) do
     put_in(
-      users,
-      [Access.at(user_index), :papers, Access.at(0)],
+      players,
+      [Access.at(player_index), :papers, Access.at(0)],
       new_paper
     )
   end
 
-  defp update_paper_and_move(users, user_index, new_paper) do
-    {old_paper, users} = pop_in(
-      users,
-      [Access.at(user_index), :papers, Access.at(0)]
+  defp update_paper_and_move(players, player_index, new_paper) do
+    {_old_paper, players} = pop_in(
+      players,
+      [Access.at(player_index), :papers, Access.at(0)]
     )
-    insert_index = rem(user_index + 1, length(users))
-    users = update_in(
-      users,
+    insert_index = rem(player_index + 1, length(players))
+    update_in(
+      players,
       [Access.at(insert_index), :papers],
       fn papers -> List.insert_at(papers, -1, new_paper) end
     )
   end
 
-  defp set_value(user_name, key, value, is_last_key, name) do
-    Agent.get_and_update name, fn state ->
-      old_index = state.users
-      |> Enum.find_index(with_user_name(user_name))
+  defp set_value(pid, user_name, key, value, is_last_key) do
+    Agent.get_and_update pid, fn state ->
+      old_index = state.game.players
+      |> Enum.find_index(fn u ->
+        user_name == u.name
+      end)
 
-      old_user = state.users
-      |> Enum.at(old_index)
+      old_player = state.game.players |> Enum.at(old_index)
 
-      [old_paper|_] = old_user.papers
+      [old_paper|_] = old_player.papers
 
       new_paper = %{ old_paper | key => value }
 
-      new_users = if is_last_key do
-        update_paper_in_place(state.users, old_index, new_paper)
+      new_players = if is_last_key do
+        update_paper_in_place(state.game.players, old_index, new_paper)
       else
-        update_paper_and_move(state.users, old_index, new_paper)
+        update_paper_and_move(state.game.players, old_index, new_paper)
       end
 
-      new_state = %{ state | users: new_users }
+      new_state = put_in(state, [:game, :players], new_players)
       {{:ok, new_state}, new_state}
     end
   end
