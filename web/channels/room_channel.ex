@@ -2,6 +2,9 @@ defmodule GameServer.RoomChannel do
   use GameServer.Web, :channel
 
   alias GameServer.PoetryGame
+  alias GameServer.Room
+
+  @name :poetry_game
 
   defp user_name do
     Inspect.inspect(self(), [])
@@ -12,39 +15,29 @@ defmodule GameServer.RoomChannel do
     # |> Enum.to_list
   end
 
-  # defp with_user_index(state) do
-  #   index = state.users
-  #   |> Enum.find_index(fn u -> u.name == user_name end)
-  #   len = length(state.users)
-  #   new_users = state.users
-  #   |> Stream.cycle
-  #   |> Enum.slice(index, len)
-  #   %{ state | users: new_users }
-  #   |> Map.put(:current_user_index, 0)
-  # end
-
   def join("room:lobby", payload, socket) do
     if authorized?(payload) do
-      {:ok, state} = PoetryGame.add_user(user_name)
-      send(self, :after_join)
-      if length(state.users) >= 3 do
-        send(self, :start_game)
+      {:ok, state} = Room.add_room_member(@name, user_name())
+      send(self(), :after_join)
+      if map_size(state.room.members) >= 3 do
+        send(self(), :start_game)
       end
-      {:ok, %{name: user_name}, socket}
+      {:ok, %{name: user_name()}, socket}
     else
       {:error, %{reason: "unauthorized"}}
     end
   end
 
   def handle_info(:after_join, socket) do
-    push socket, "name", %{name: user_name}
-    state = PoetryGame.get
+    push socket, "name", %{name: user_name()}
+    state = Room.state(@name)
+    broadcast socket, "shout", %{from: "Server", message: "User #{user_name()} joined"}
     broadcast socket, "state", state
     {:noreply, socket}
   end
 
   def handle_info(:start_game, socket) do
-    {:ok, state} = PoetryGame.start_game
+    {:ok, state} = PoetryGame.start_game(@name)
     broadcast socket, "state", state
     {:noreply, socket}
   end
@@ -54,31 +47,31 @@ defmodule GameServer.RoomChannel do
   end
 
   def handle_in("set_word", payload, socket) do
-    IO.inspect "SET W"
+    # IO.inspect "SET W"
     %{
       "word" => word
     } = payload
-    {:ok, state} = PoetryGame.set_word(user_name, word)
+    {:ok, state} = PoetryGame.set_word(@name, user_name(), word)
     broadcast socket, "state", state
     {:reply, :ok, socket}
   end
 
   def handle_in("set_question", payload, socket) do
-    IO.inspect "SET Q"
+    # IO.inspect "SET Q"
     %{
       "question" => question
     } = payload
-    {:ok, state} = PoetryGame.set_question(user_name, question)
+    {:ok, state} = PoetryGame.set_question(@name, user_name(), question)
     broadcast socket, "state", state
     {:reply, :ok, socket}
   end
 
   def handle_in("set_poem", payload, socket) do
-    IO.inspect "SET P"
+    # IO.inspect "SET P"
     %{
       "poem" => poem
     } = payload
-    {:ok, state} = PoetryGame.set_poem(user_name, poem)
+    {:ok, state} = PoetryGame.set_poem(@name, user_name(), poem)
     broadcast socket, "state", state
     {:reply, :ok, socket}
   end
@@ -86,20 +79,15 @@ defmodule GameServer.RoomChannel do
   # Channels can be used in a request/response fashion
   # by sending replies to requests from the client
   def handle_in("paper", payload, socket) do
-    IO.inspect payload
+    # IO.inspect payload
     %{
-      "poem" => poem,
-      "question" => question,
-      "user" => user,
-      "word" => word
+      "poem" => _poem,
+      "question" => _question,
+      "user" => _user,
+      "word" => _word
     } = payload
     {:reply, {:ok, payload}, socket}
   end
-
-  # def handle_in("ready", payload, socket) do
-  #   {:ok, state} = PoetryGame.set_ready(user_name)
-  #   {:reply, {:ok, state}, socket}
-  # end
 
   # It is also common to receive messages from the client and
   # broadcast to everyone in the current topic (room:lobby).
@@ -108,26 +96,13 @@ defmodule GameServer.RoomChannel do
     {:noreply, socket}
   end
 
-  # intercept ["start"]
-
-  # def handle_out("shout", payload, socket) do
-  #   IO.inspect shout_out: payload, from: user_name
-  #   push socket, "shout", %{message: message, from: user_name}
-  #   {:noreply, socket}
-  # end
-
-  # def handle_out("start", payload, socket) do
-  #   push socket, "start", payload
-  #   {:noreply, socket}
-  # end
-
-  # def handle_in("shout", msg, socket) do
-  #   broadcast! socket, "shout", %{user: msg["user"], body: msg["body"]}
-  #   {:reply, {:ok, %{msg: msg["body"]}}, assign(socket, :user, msg["user"])}
-  # end
-
-  def terminate(reason, socket) do
-    {:ok, state} = PoetryGame.remove_user(user_name)
+  # TODO: more robust handling of people leaving
+  #
+  # https://stackoverflow.com/questions/33934029/how-to-detect-if-a-user-left-a-phoenix-channel-due-to-a-network-disconnect
+  def terminate({_, reason}, socket) do
+    {:ok, state} = Room.remove_room_member(@name, user_name())
+    broadcast socket, "shout", %{from: "Server", message: "User #{user_name()} left (#{reason})"}
+    {:ok, state} = PoetryGame.remove_player(@name, user_name())
     broadcast socket, "state", state
     {:ok}
   end

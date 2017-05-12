@@ -13,23 +13,40 @@ import Debug
 import Navigation
 import UrlParser
 import Regex
+import Dict exposing (Dict)
 
 
 type alias Model =
     { phxSocket : Phoenix.Socket.Socket Msg
-    , users : Array User
-    , chatInputText : String
-    , chatMessages : List ChatMessage
     , name : String
+    , chatInputText : String
     , currentWordInputText : String
     , currentQuestionInputText : String
     , currentPoemInputText : String
+    , game : GameState
+    , room : RoomState
     }
 
 
-type alias User =
+type alias RoomState =
+    { messages : List ChatMessage
+    , members : Dict String ChatMember
+    }
+
+
+type alias ChatMember =
     { name : String
-    , state : String
+    }
+
+
+type alias ChatMessage =
+    { from : String
+    , message : String
+    }
+
+
+type alias Player =
+    { name : String
     , papers : List Paper
     }
 
@@ -41,9 +58,14 @@ type alias Paper =
     }
 
 
-type alias ChatMessage =
-    { from : String
-    , message : String
+type alias ServerState =
+    { game : GameState
+    , room : RoomState
+    }
+
+
+type alias GameState =
+    { players : Array Player
     }
 
 
@@ -69,16 +91,6 @@ type Msg
     | SubmitPoemError JE.Value
     | NameMessage JE.Value
     | StateMessage JE.Value
-
-
-type alias ChatMessagePayload =
-    { message : String
-    }
-
-
-type alias ServerState =
-    { users : Array User
-    }
 
 
 
@@ -152,11 +164,16 @@ init location =
             { phxSocket = initSocket
             , name = ""
             , chatInputText = ""
-            , chatMessages = []
             , currentWordInputText = ""
             , currentQuestionInputText = ""
             , currentPoemInputText = ""
-            , users = Array.fromList []
+            , game =
+                { players = Array.empty
+                }
+            , room =
+                { members = Dict.empty
+                , messages = []
+                }
             }
     in
         ( model, Cmd.map PhoenixMsg phxCmd )
@@ -224,48 +241,49 @@ viewCurrentPaper isCurrent paper =
             div [ class "current-paper" ]
                 [ text "No paper!" ]
 
+
 viewPoem : Paper -> Html Msg
 viewPoem paper =
     let
-        readyToInput = paper.word /= Nothing && paper.question /= Nothing
+        readyToInput =
+            paper.word /= Nothing && paper.question /= Nothing
     in
-                    (case paper.poem of
-                        Just poem ->
-                            div []
-                                [ strong [] [ text "Poem:" ]
-                                , div [ class "poem-rendered" ]
-                                    [ text poem ]
-                                ]
+        (case paper.poem of
+            Just poem ->
+                div []
+                    [ strong [] [ text "Poem:" ]
+                    , div [ class "poem-rendered" ]
+                        [ text poem ]
+                    ]
 
-                        Nothing ->
-                            form [ onSubmit SubmitPoem ]
-                                [ div
-                                    [ class "poem"
-                                    , contenteditable readyToInput
-                                    , attribute "placeholder" "Poem"
-                                    , on "input" (
-                                                   JD.map
-                                                       SavePoem
-                                                       targetTextContent
-                                                  )
-
-                                    ]
-                                    []
-                                , (if readyToInput then
-                                    button [
-                                         class "btn btn-sm btn-default btn-reveal"
-                                        ]
-                                       [ text "Reveal" ]
-                                   else
-                                    span [] []
-                                  )
-                                ]
+            Nothing ->
+                form [ onSubmit SubmitPoem ]
+                    [ div
+                        [ class "poem"
+                        , contenteditable readyToInput
+                        , attribute "placeholder" "Poem"
+                        , on "input"
+                            (JD.map
+                                SavePoem
+                                targetTextContent
+                            )
+                        ]
+                        []
+                    , (if readyToInput then
+                        button
+                            [ class "btn btn-sm btn-default btn-reveal"
+                            ]
+                            [ text "Reveal" ]
+                       else
+                        span [] []
                       )
+                    ]
+        )
 
 
 targetTextContent : JD.Decoder String
 targetTextContent =
-  JD.at ["target", "innerText"] JD.string
+    JD.at [ "target", "innerText" ] JD.string
 
 
 isFinished : Maybe Paper -> Bool
@@ -283,8 +301,8 @@ isFinished paper =
                     False
 
 
-viewUser : String -> Int -> Int -> User -> Html Msg
-viewUser name userCount userIndex user =
+viewPlayer : String -> Int -> Int -> Player -> Html Msg
+viewPlayer name userCount userIndex user =
     let
         currentPaper =
             List.head user.papers
@@ -297,7 +315,7 @@ viewUser name userCount userIndex user =
 
         htmlClass =
             (String.join " "
-                [ "user"
+                [ "player"
                 , (if noPaper then
                     "no-paper"
                    else
@@ -342,37 +360,47 @@ viewChat model =
                 ]
                 []
             , div [ class "log" ]
-                (model.chatMessages
+                (model.room.messages
                     |> List.map (\m -> p [] [ text (m.from ++ ": " ++ m.message) ])
                 )
             ]
         , div [ class "members" ]
             [ ul []
-                (Array.toList (Array.map viewMemberItem model.users))
+                (List.map viewMemberItem (Dict.values model.room.members))
             ]
         ]
 
-viewMemberItem : User -> Html Msg
-viewMemberItem user =
-    li [] [ text user.name ]
 
-view : Model -> Html Msg
-view model =
-    let
-        viewUser_ =
-            viewUser model.name (Array.length (model.users))
-    in
-        div []
-            [ div [ class "game" ]
-                [ div [ class "users" ]
-                    (model.users
-                        |> Array.indexedMap (viewUser_)
+viewMemberItem : ChatMember -> Html Msg
+viewMemberItem member =
+    li [] [ text member.name ]
+
+
+viewGame : Model -> Html Msg
+viewGame model =
+    if (Array.length model.game.players) < 3 then
+        text "The game will start when there are 3 players"
+    else
+        let
+            viewPlayer_ =
+                viewPlayer model.name (Array.length model.game.players)
+        in
+            div [ class "game" ]
+                [ div [ class "players" ]
+                    (model.game.players
+                        |> Array.indexedMap (viewPlayer_)
                         |> Array.toList
                         |> List.intersperse (text " ")
                     )
                 ]
-            , viewChat model
-            ]
+
+
+view : Model -> Html Msg
+view model =
+    div []
+        [ viewGame model
+        , viewChat model
+        ]
 
 
 
@@ -387,18 +415,47 @@ decodeServerPaper =
         (JD.maybe (JD.field "poem" JD.string))
 
 
-decodeServerUser : JD.Decoder User
-decodeServerUser =
-    JD.map3 User
+decodeServerPlayer : JD.Decoder Player
+decodeServerPlayer =
+    JD.map2 Player
         (JD.field "name" JD.string)
-        (JD.field "state" JD.string)
         (JD.field "papers" (JD.list decodeServerPaper))
+
+
+decodeGameState : JD.Decoder GameState
+decodeGameState =
+    JD.map GameState
+        (JD.field "players" (JD.array decodeServerPlayer))
 
 
 decodeServerState : JD.Decoder ServerState
 decodeServerState =
-    JD.map ServerState
-        (JD.field "users" (JD.array decodeServerUser))
+    JD.map2 ServerState
+        (JD.field "game" decodeGameState)
+        (JD.field "room" decodeRoomState)
+
+
+decodeRoomState : JD.Decoder RoomState
+decodeRoomState =
+    JD.map2 RoomState
+        (JD.field "messages" decodeChatMessages)
+        (JD.field "members" decodeChatMembers)
+
+
+decodeChatMembers : JD.Decoder (Dict String ChatMember)
+decodeChatMembers =
+    JD.dict decodeChatMember
+
+
+decodeChatMember : JD.Decoder ChatMember
+decodeChatMember =
+    JD.map ChatMember
+        (JD.field "name" JD.string)
+
+
+decodeChatMessages : JD.Decoder (List ChatMessage)
+decodeChatMessages =
+    JD.list decodeChatMessage
 
 
 decodeChatMessage : JD.Decoder ChatMessage
@@ -411,6 +468,29 @@ decodeChatMessage =
 
 -- ----------------------------------------------------------------------
 
+
+appendChatMessage : Model -> String -> String -> Model
+appendChatMessage model from message =
+    let
+        newMessages =
+            { message = message, from = from } :: model.room.messages
+
+        oldChat =
+            model.room
+
+        newChat =
+            { oldChat | messages = newMessages }
+    in
+        { model | room = newChat }
+
+updateRoom : Model -> RoomState -> Model
+updateRoom model chatState =
+    let
+        room = model.room
+        newRoom = { room | members = chatState.members }
+    in
+        { model | room = newRoom }
+
 update : Msg -> Model -> ( Model, Cmd Msg )
 update msg model =
     case msg of
@@ -418,20 +498,17 @@ update msg model =
         StateMessage json ->
             let
                 log =
-                    Debug.log "response" response
+                    Debug.log "state update" response
 
                 response =
                     JD.decodeValue decodeServerState json
             in
                 case response of
                     Ok state ->
-                        -- TODO: update model with state msg
-                        ( { model | users = state.users }, Cmd.none )
+                        ( (updateRoom { model | game = state.game } state.room), Cmd.none )
 
                     Err error ->
-                        ( { model | chatMessages = { message = "Failed to receive state", from = "Server" } :: model.chatMessages }
-                        , Cmd.none
-                        )
+                        ( appendChatMessage model "Server" "Failed to receive state", Cmd.none )
 
         LocationChange location ->
             ( model, Cmd.none )
@@ -448,9 +525,7 @@ update msg model =
                         )
 
                     Err error ->
-                        ( { model | chatMessages = { message = "Failed to receive message", from = "Server" } :: model.chatMessages }
-                        , Cmd.none
-                        )
+                        ( appendChatMessage model "Server" "Failed to receive name message", Cmd.none )
 
         -- SUBMIT
         SubmitWord ->
@@ -502,10 +577,7 @@ update msg model =
             ( model, Cmd.none )
 
         SavePoem str ->
-            let
-                log = Debug.log "SAVING POEM" str
-            in
-                ( { model | currentPoemInputText = str }, Cmd.none )
+            ( { model | currentPoemInputText = str }, Cmd.none )
 
         SubmitPoem ->
             let
@@ -576,21 +648,13 @@ update msg model =
             in
                 case somePayload of
                     Ok payload ->
-                        ( { model | chatMessages = payload :: model.chatMessages }
-                        , Cmd.none
-                        )
+                        ( appendChatMessage model payload.from payload.message, Cmd.none )
 
                     Err error ->
-                        ( { model | chatMessages = { message = "Failed to receive message", from = "Server" } :: model.chatMessages }
-                        , Cmd.none
-                        )
+                        ( appendChatMessage model "Server" "Failed to receive chat message", Cmd.none )
 
         ChatHandleSendError err ->
-            let
-                message =
-                    { message = "Failed to Send Message", from = "Server" }
-            in
-                ( { model | chatMessages = message :: model.chatMessages }, Cmd.none )
+            ( appendChatMessage model "Server" "Failed to send chat message", Cmd.none )
 
         -- PHOENIX CONTROL MESSAGES (heartbeats, pings)
         PhoenixMsg msg ->
