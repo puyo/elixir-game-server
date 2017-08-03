@@ -780,15 +780,15 @@ brunch-skeletons@~0.1.4:
   version "0.1.5"
   resolved "https://registry.yarnpkg.com/brunch-skeletons/-/brunch-skeletons-0.1.5.tgz#2b35112b8c792d8f11087653d3fc8febf892375b"
 
-brunch@^2.10.9:
-  version "2.10.9"
-  resolved "https://registry.yarnpkg.com/brunch/-/brunch-2.10.9.tgz#a74bb5aef87fa87ce0dd4ca4f996610204358d30"
+brunch@^2.10.10:
+  version "2.10.10"
+  resolved "https://registry.yarnpkg.com/brunch/-/brunch-2.10.10.tgz#89d14bfbd7ca0c2e326167c2625ce1d4c937d4f8"
   dependencies:
     anymatch "~1.3"
     anysort "~1.0"
     check-dependencies "~1.0.1"
     chokidar "^1.6"
-    coffee-script "~1.11"
+    coffee-script "~1.12.7"
     commander "~2.9"
     commonjs-require-definition "~0.6.2"
     debug "~2.2"
@@ -951,9 +951,9 @@ code-point-at@^1.0.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/code-point-at/-/code-point-at-1.1.0.tgz#0d070b4d043a5bea33a2f1a40e2edb3d9a4ccf77"
 
-coffee-script@~1.11:
-  version "1.11.1"
-  resolved "https://registry.yarnpkg.com/coffee-script/-/coffee-script-1.11.1.tgz#bf1c47ad64443a0d95d12df2b147cc0a4daad6e9"
+coffee-script@~1.12.7:
+  version "1.12.7"
+  resolved "https://registry.yarnpkg.com/coffee-script/-/coffee-script-1.12.7.tgz#c05dae0cb79591d05b3070a8433a98c9a89ccc53"
 
 combined-stream@^1.0.5, combined-stream@~1.0.5:
   version "1.0.5"
@@ -1257,9 +1257,9 @@ elliptic@^6.0.0:
     minimalistic-assert "^1.0.0"
     minimalistic-crypto-utils "^1.0.0"
 
-elm-brunch@^0.8.0:
-  version "0.8.0"
-  resolved "https://registry.yarnpkg.com/elm-brunch/-/elm-brunch-0.8.0.tgz#713c5c5de5483b17dcc6272cc1f1fdefed468ed1"
+elm-brunch@^0.9.0:
+  version "0.9.0"
+  resolved "https://registry.yarnpkg.com/elm-brunch/-/elm-brunch-0.9.0.tgz#27103834347f4b23b145dc3fadb79b40237897a6"
 
 elm@^0.18.0:
   version "0.18.0"
@@ -2545,7 +2545,7 @@ performance-now@^0.2.0:
   version "1.2.4"
 
 "phoenix_html@file:deps/phoenix_html":
-  version "2.9.3"
+  version "2.10.2"
 
 pify@^2.0.0:
   version "2.3.0"
